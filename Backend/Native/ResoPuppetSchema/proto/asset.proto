@@ -1,0 +1,112 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto";
+
+package nadena.dev.ndmf.proto;
+
+import "proto/base_types.proto";
+import "proto/mesh.proto";
+import "google/protobuf/any.proto";
+
+message Asset {
+  string name = 1;
+  AssetID id = 2;
+  
+  google.protobuf.Any asset = 3;
+  
+  // A stable, internal identifier for the asset (eg derived from unity GUID)
+  optional string stable_id = 4;
+}
+
+enum BlendMode {
+  Opaque = 0;
+  Cutout = 1;
+  Transparent = 2;
+  Alpha = 3;
+  Additive = 4;
+  Multiply = 5;
+  Fade = 6;
+}
+
+message ScaleOffset {
+  Vector scale = 1;
+  Vector offset = 2;
+}
+
+enum CullMode {
+  BACK = 0;
+  FRONT = 1;
+  NONE = 2;
+}
+
+enum MaterialCategory {
+  PBR = 0;
+  UNLIT = 1;
+  TOON = 2;
+  FAKE_SHADOW = 3;
+}
+
+enum ToonOutlineMode {
+  TOON_OUTLINE_NONE = 0;
+  TOON_OUTLINE_LIT = 1;
+}
+
+message Material {
+  MaterialCategory category = 15;
+  optional AssetID main_texture = 1;
+  optional ScaleOffset main_texture_scale_offset = 2;
+  optional Color main_color = 3;
+  optional AssetID normal_map = 4;
+  optional ScaleOffset normal_map_scale_offset = 5;
+  optional AssetID emission_map = 6;
+  optional Color emission_color = 7;
+  optional ScaleOffset emission_map_scale_offset = 8;
+  BlendMode blend_mode = 9;
+  optional float alpha_clip = 10;
+  CullMode cull_mode = 11;
+  optional AssetID matcap_texture = 12;
+  optional Color matcap_color = 13;
+  // TODO - should we represent alpha mask textures?
+  
+  // Resonite seems to use the same render queue properties as Unity, including the effects on transparency.
+  // While this isn't as portable as we'd like, there's a lot of Unity-based VR games out there, so it makes sense to
+  // support it as optional.
+  optional int32 unity_render_queue = 14;
+
+  // TODO - packing this is a bit ugly but avoids needing renderer access or graphics manipulation on the puppet side
+  optional AssetID smoothness_metallic_reflection_map = 16;
+  optional float smoothness = 17;
+  optional float metallic = 18;
+  optional float reflectivity = 19;
+
+  // For the asset reference fields below, an unset field lets the backend fall back to its
+  // shared (exemplar) configuration, while an explicit AssetID of 0 forces a null reference.
+  optional AssetID shadow_ramp = 20;
+  optional AssetID shadow_ramp_mask = 21;
+  optional ToonOutlineMode outline = 22;
+  optional Color outline_color = 23;
+  optional float outline_width = 24;
+  optional AssetID outline_mask = 25;
+  optional Color rim_color = 26;
+  optional float rim_intensity = 27;
+  optional float rim_range = 28;
+  optional float rim_threshold = 29;
+  optional float rim_sharpness = 30;
+  optional bool z_write = 31;
+
+  // TODO...
+}
+
+enum TextureFormat {
+  PNG = 0;
+  JPEG = 1;
+}
+
+message Texture {
+  TextureFormat format = 1;
+  bool is_normal_map = 3;
+  optional uint32 max_resolution = 4;
+  
+  oneof contents {
+    Blob bytes = 2;
+  }
+}

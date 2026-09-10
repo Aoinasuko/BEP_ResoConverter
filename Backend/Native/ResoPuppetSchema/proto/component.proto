@@ -1,0 +1,21 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto";
+
+package nadena.dev.ndmf.proto;
+
+import "proto/base_types.proto";
+
+message MeshRenderer {
+  AssetID mesh = 1;
+  repeated AssetID materials = 2;
+  repeated ObjectID bones = 3;
+  repeated float blendshape_weights = 4;
+}
+
+message VisibleInFirstPerson {
+  bool visible = 1;
+}
+
+message RigRoot {
+
+}

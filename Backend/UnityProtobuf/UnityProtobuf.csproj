@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Google.Protobuf</AssemblyName>
+    <Version>3.30.1</Version>
+    <AssemblyVersion>3.30.1.0</AssemblyVersion>
+    <LangVersion>10</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Google.Protobuf.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Source/**/*.cs" Exclude="Source/obj/**;Source/bin/**" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.2"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
+        <PackageReference Include="NUnit" Version="4.3.2" />
+        <PackageReference Include="NUnit.Analyzers" Version="4.4.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.6.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="NUnit.Framework"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Launcher\Launcher.csproj" />
+        <ProjectReference Include="..\Puppeteer\Puppeteer.csproj" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <ResoniteDir Condition="Exists('../../ResoniteDir')">../../ResoniteDir</ResoniteDir>
+        <ResoniteDir Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite')">C:\Program Files (x86)\Steam\steamapps\common\Resonite</ResoniteDir>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="Elements.Assets">
+            <HintPath>$(ResoniteDir)/Elements.Assets.dll</HintPath>
+        </Reference>
+        <Reference Include="Elements.Core">
+            <HintPath>$(ResoniteDir)/Elements.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="FrooxEngine">
+            <HintPath>$(ResoniteDir)/FrooxEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="Renderite.Shared">
+            <HintPath>$(ResoniteDir)/Renderite.Shared.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+  <PropertyGroup>
+    <OutDir>bin</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+</Project>

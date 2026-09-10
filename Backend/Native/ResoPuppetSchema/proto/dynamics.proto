@@ -1,0 +1,48 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto";
+
+package nadena.dev.ndmf.proto;
+
+import "proto/base_types.proto";
+
+enum ColliderType {
+  SPHERE = 0;
+  // Capsule along the Y axis
+  CAPSULE = 1;
+  PLANE = 2;
+}
+
+message DynamicCollider {
+  ObjectID target_transform = 1;
+  ColliderType type = 2;
+  float radius = 3;
+  float height = 4;
+  Vector position_offset = 5;
+  Quaternion rotation_offset = 6;
+}
+
+message DynamicBone {
+  optional string template_name = 2;
+  optional ObjectID root_transform = 3;
+  bool is_grabbable = 5;
+  //.bool ignore_self = 6;
+  repeated ObjectID colliders = 7;
+  
+  repeated DynamicBoneNode bones = 8;
+  optional float vrc_pull = 20;
+  optional float vrc_spring = 21;
+  optional float vrc_stiffness = 22;
+  optional float vrc_gravity = 23;
+  optional float vrc_immobile = 24;
+  bool vrc_parameters = 25;
+}
+
+message DynamicBoneNode {
+  ObjectID bone = 1;
+  float radius = 2;
+  optional float pull = 3;
+  optional float spring = 4;
+  optional float stiffness = 5;
+  optional float gravity = 6;
+  optional float immobile = 7;
+}

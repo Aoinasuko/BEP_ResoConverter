@@ -1,0 +1,55 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto";
+
+package nadena.dev.ndmf.proto;
+
+import public "google/protobuf/empty.proto";
+
+message Blob {
+  oneof source {
+    bytes inline = 1;
+  }
+}
+
+message ObjectID {
+  uint64 id = 1;
+}
+message AssetID {
+  uint64 id = 1;
+}
+message Vector {
+  float x = 1;
+  float y = 2;
+  optional float z = 3;
+  optional float w = 4;
+}
+message Quaternion {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
+}
+message Color {
+  float r = 1;
+  float g = 2;
+  float b = 3;
+  float a = 4;
+  
+  optional ColorProfile profile = 5;
+}
+
+enum ColorProfile {
+  Linear = 0;
+  sRGB = 1;
+  sRGBA = 2;
+}
+
+message Transform {
+  Vector position = 1;
+  Quaternion rotation = 2;
+  Vector scale = 3;
+}
+message Matrix {
+  // row-major order
+  repeated float values = 1;
+}

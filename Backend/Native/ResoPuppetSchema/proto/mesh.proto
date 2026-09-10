@@ -1,0 +1,66 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto.mesh";
+
+import "proto/base_types.proto";
+
+package nadena.dev.ndmf.proto;
+
+message Mesh {
+  repeated Vector positions = 1;
+  repeated Vector normals = 2;
+  repeated Vector tangents = 3;
+  repeated Color colors = 4;
+  repeated UVChannel uvs = 5;
+  repeated Submesh submeshes = 6;
+  repeated Bone bones = 7;
+  repeated VertexBoneWeights vertex_bone_weights = 8;
+  repeated Blendshape blendshapes = 9;
+}
+
+message UVChannel {
+  repeated Vector uvs = 1;
+}
+
+message Submesh {
+  oneof mesh_data {
+    TriangleList triangles = 1;
+    uint32 points = 2;
+  }
+}
+
+message TriangleList {
+  // clockwise winding order (same as Unity)
+  repeated Triangle triangles = 1;
+}
+
+message Triangle {
+  int32 v0 = 1;
+  int32 v1 = 2;
+  int32 v2 = 3;
+}
+
+message Bone {
+  string name = 1;
+  Matrix bindpose = 2;
+}
+
+message VertexBoneWeights {
+  repeated BoneWeight bone_weights = 1;
+}
+
+message BoneWeight {
+  uint32 bone_index = 1;
+  float weight = 2;
+}
+
+message Blendshape {
+  string name = 1;
+  repeated BlendshapeFrame frames = 2;
+}
+
+message BlendshapeFrame {
+  float weight = 1;
+  repeated Vector delta_positions = 2;
+  repeated Vector delta_normals = 3;
+  repeated Vector delta_tangents = 4;
+}

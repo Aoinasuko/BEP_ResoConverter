@@ -1,0 +1,300 @@
+﻿using System.CommandLine;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using nadena.dev.resonity.remote.puppeteer;
+using nadena.dev.resonity.remote.puppeteer.logging;
+
+namespace nadena.dev.resonity.remote.bootstrap;
+
+public class Launcher
+{
+    private static bool DidConfigurePaths = false;
+    
+    private const string defaultResoniteBase = "C:/Program Files (x86)/Steam/steamapps/common/Resonite";
+    private string assemblyBase;
+    private string puppeteerBase;
+
+    private List<string> assemblyPaths;
+    private List<string> dllPaths;
+
+    private string resoniteBase = defaultResoniteBase;
+    public string? tempDirectory = ".";
+    public string? inputPath;
+    public string? outputPath;
+    public int? timeoutSeconds;
+    public string? logPath;
+    public string? settingsPath;
+
+    public static void ConfigurePathsStatic(string? resonitePath = null)
+    {
+        if (!DidConfigurePaths) new Launcher().ConfigurePaths(resonitePath);
+    } 
+    
+    public void ConfigurePaths(string? resonitePath = null)
+    {
+        if (DidConfigurePaths) return;
+        DidConfigurePaths = true;
+        
+        resoniteBase = resonitePath ?? SteamUtils.GetGamePath(2519830) ?? defaultResoniteBase;
+
+        assemblyBase = resoniteBase + "/";
+
+        dllPaths = new()
+        {
+            Directory.GetCurrentDirectory() + "/",
+            Path.GetDirectoryName(typeof(Launcher).Assembly.Location)!,
+            assemblyBase,
+            //resoniteBase + "/Resonite_Data/Plugins/x86_64/",
+            resoniteBase + "/Tools/",
+            resoniteBase + "/Runtimes/win-x64/",
+        };
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            dllPaths.Add(resoniteBase + "/Runtimes/win-x64/native/");
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            dllPaths.Add(resoniteBase + "/runtimes/linux-x64/native/");
+        }
+
+        AppDomain.CurrentDomain.AssemblyLoad += (sender, args) =>
+        {
+            if (args.LoadedAssembly.FullName?.StartsWith("SharpFont") == true)
+            {
+                // SharpFont sets its own dll import resolver
+                return;
+            }
+            NativeLibrary.SetDllImportResolver(args.LoadedAssembly, DllImportResolver);
+        };
+
+        AppDomain.CurrentDomain.AssemblyResolve += OnResolveFailed;
+        
+        // Preload the freetype library to avoid issues with the DllImportResolver that is in SharpFont
+        // looking in the wrong paths.
+        var sharpFont = Assembly.Load("SharpFont");
+        DllImportResolver("freetype6", sharpFont, null);
+        DllImportResolver("libfreetype.so.6", sharpFont, null);
+        DllImportResolver("libfreetype6-arm.so", sharpFont, null);
+        DllImportResolver("libfreetype6.dylib", sharpFont, null);
+    }
+
+    public async Task<int> Launch(string[] args)
+    {
+        ParseArgs(args);
+
+        if (logPath != null)
+        {
+            LogController.OpenLogfile(logPath);
+        }
+
+        if (tempDirectory == null)
+        {
+            throw new ArgumentNullException(nameof(tempDirectory), "Temp directory cannot be null");
+        }
+
+        if (inputPath == null)
+        {
+            throw new ArgumentNullException(nameof(inputPath), "Input path cannot be null");
+        }
+
+        if (outputPath == null)
+        {
+            throw new ArgumentNullException(nameof(outputPath), "Output path cannot be null");
+        }
+
+        ConfigurePaths(resoniteBase);
+
+        System.Console.WriteLine("Starting Resonite Launcher");
+
+        /*
+        var puppeteer = Assembly.LoadFile("Puppeteer.dll");
+        var program = puppeteer.GetType("Puppeteer.Program");
+        var main = program.GetMethod("Main", BindingFlags.Static | BindingFlags.NonPublic);
+        await (Task) main.Invoke(null, null);
+        */
+        Assembly puppeteerAssembly;
+        try
+        {
+            puppeteerAssembly = Assembly.Load("Puppeteer");
+        }
+        catch (Exception e)
+        {
+            var path = Assembly.GetExecutingAssembly().Location;
+            path = Path.Combine(Path.GetDirectoryName(path)!, "../../Puppeteer/bin", "Puppeteer.dll");
+
+            puppeteerAssembly = Assembly.LoadFile(path);
+        }
+
+        puppeteerBase = Path.GetDirectoryName(puppeteerAssembly.Location) + "/";
+
+        var puppeteer = puppeteerAssembly.GetType("nadena.dev.resonity.remote.puppeteer.Program");
+        var main = puppeteer?.GetMethod("RunBatch", BindingFlags.Static | BindingFlags.NonPublic);
+
+        if (main == null)
+        {
+            throw new Exception("Could not find RunBatch method in Puppeteer.Program");
+        }
+
+        var startupArgs = new StartupArgs()
+        {
+            resoniteInstallDirectory = resoniteBase,
+            dataAndCacheRoot = tempDirectory,
+            inputPath = inputPath,
+            outputPath = outputPath,
+            timeoutSeconds = timeoutSeconds,
+            settingsPath = settingsPath,
+        };
+
+        return await (Task<int>)main.Invoke(null, [startupArgs])!;
+    }
+
+    private void ParseArgs(string[] args)
+    {
+        // Read our additional option before passing the upstream arguments to System.CommandLine.
+        var remaining = new List<string>();
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--settings" && i + 1 < args.Length) settingsPath = args[++i];
+            else remaining.Add(args[i]);
+        }
+        args = remaining.ToArray();
+        var resoInstallOption = new Option<string?>(
+            name: "--resonite-install-path",
+            description: "Path to the Resonite installation. Defaults to " + defaultResoniteBase);
+        var tempDirectory = new Option<string?>(
+            name: "--temp-directory",
+            description: "Path to the temporary directory used for resonite's LocalDB.");
+        var inputPath = new Option<string?>(
+            name: "--input",
+            description: "Path to the serialized ExportRoot protobuf to convert.");
+        var outputPath = new Option<string?>(
+            name: "--output",
+            description: "Path to write the resulting .resonitepackage file to.");
+        var timeoutSeconds = new Option<int?>(
+            name: "--timeout-seconds",
+            description: "Time in seconds to wait for the engine to shut down before forcibly terminating the process. Defaults to 60.");
+        var logPath = new Option<string?>(
+            name: "--log-path",
+            description: "Path to the log file. Defaults to logging to the console only.");
+
+        var rootCommand = new RootCommand("Modular Avatar Resonite backend");
+        rootCommand.AddOption(resoInstallOption);
+        rootCommand.AddOption(tempDirectory);
+        rootCommand.AddOption(inputPath);
+        rootCommand.AddOption(outputPath);
+        rootCommand.AddOption(timeoutSeconds);
+        rootCommand.AddOption(logPath);
+
+        rootCommand.SetHandler((string? resoInstallPath, string? tempDirectory, string? inputPath, string? outputPath, int? timeoutSeconds, string? logPath) =>
+        {
+            if (resoInstallPath != null)
+            {
+                resoniteBase = resoInstallPath;
+            }
+
+            if (tempDirectory != null)
+            {
+                this.tempDirectory = tempDirectory;
+            }
+
+            if (inputPath != null)
+            {
+                this.inputPath = inputPath;
+            }
+
+            if (outputPath != null)
+            {
+                this.outputPath = outputPath;
+            }
+
+            if (timeoutSeconds != null)
+            {
+                this.timeoutSeconds = timeoutSeconds;
+            }
+
+            if (logPath != null)
+            {
+                this.logPath = logPath;
+            }
+        }, resoInstallOption, tempDirectory, inputPath, outputPath, timeoutSeconds, logPath);
+
+        rootCommand.Invoke(args);
+    }
+
+    private IntPtr DllImportResolver(string libraryname, Assembly assembly, DllImportSearchPath? searchpath)
+    {
+        var dllNames = GetDynamicLinkLibraryFileNames(libraryname).ToArray();
+        foreach (var dllPath in dllPaths)
+        {
+            foreach (var name in dllNames)
+            {
+                var path = dllPath + name;
+                if (File.Exists(path) is false) { continue; }
+
+                try
+                {
+                    var h = NativeLibrary.Load(path, assembly, searchpath);
+                    if (h != 0) { return h; }
+                }
+                catch (DllNotFoundException) { }
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+    private IEnumerable<string> GetDynamicLinkLibraryFileNames(string libName)
+    {
+        string trimLibName = libName;
+        if (trimLibName.EndsWith(".dll")) { trimLibName = trimLibName.Replace(".dll", null); }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            yield return $"{trimLibName}.dll";
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            yield return $"{trimLibName}.so";
+            yield return $"lib{trimLibName}.so";
+        }
+        // if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        // {
+        //     yield return $"{trimLibName}.dylib";
+        //     yield return $"lib{trimLibName}.dylib";
+        // }
+    }
+
+    private Assembly? OnResolveFailed(object? sender, ResolveEventArgs args)
+    {
+        var name = args.Name;
+
+        if (name.Contains(","))
+        {
+            name = name.Split(',')[0];
+        }
+
+        if (name.EndsWith(".resources"))
+        {
+            name = name.Substring(0, name.Length - ".resources".Length);
+        }
+
+        if (name == "Puppeteer") return null;
+
+        var dll = assemblyBase + name + ".dll";
+
+        try
+        {
+            return Assembly.LoadFile(puppeteerBase + name + ".dll");
+        }
+        catch (Exception)
+        {
+            try
+            {
+                return Assembly.LoadFile(dll);
+            }
+            catch (FileNotFoundException)
+            {
+                return null;
+            }
+        }
+    }
+}

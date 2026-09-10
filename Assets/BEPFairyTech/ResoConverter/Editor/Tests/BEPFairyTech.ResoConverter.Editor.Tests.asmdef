@@ -1,0 +1,10 @@
+{
+  "name": "BEPFairyTech.ResoConverter.Editor.Tests",
+  "references": ["BEPFairyTech.ResoConverter.Editor"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "overrideReferences": true,
+  "precompiledReferences": ["BEP.ResoConverter.Schema.dll", "Google.Protobuf.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

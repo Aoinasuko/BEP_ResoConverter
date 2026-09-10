@@ -1,0 +1,82 @@
+# Local research, test models, execution records and helper runtimes
+/.research/
+/.artifacts/
+/.artifacts-*
+/.tools/
+# Local API inspection and ad-hoc export fixtures
+/Backend/Inspect/
+/Backend/Smoke/
+
+# Release packages are uploaded to GitHub Releases, not stored in Git
+/Dist/
+/dist/
+*.unitypackage
+*.resonitepackage
+*.resonitepackage.*
+*.inspection.json
+
+# Unity generated data
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+*.unityproj
+*.pidb
+*.opendb
+*.VC.db
+
+# .NET build output (keep .csproj, source DLLs and BackendPayload.bytes)
+[Bb]in/
+/Backend/build/
+*.pdb
+*.csproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+*.binlog
+
+# Editor, OS and Python local state
+.vs/
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Local credentials and MCP connection descriptors
+.codex/
+.env
+.env.*
+!.env.example
+.secrets/
+secrets/
+.mcp.json
+mcp.json
+mcp-config*.json
+*.mcp.local.json
+unity-mcp*.json
+*token*.json
+*token*.txt
+*credentials*.json
+*.pem
+*.pfx
+*.p12
+*.key
+
+# Deliberately tracked: Editor/Plugins/*.dll and Editor/BackendPayload.bytes.
+# Backend/UnityProtobuf/Google.Protobuf.snk is the publicly distributed upstream strong-name key.

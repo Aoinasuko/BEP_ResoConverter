@@ -1,0 +1,33 @@
+# Normalize source text while preserving packaged binaries byte-for-byte.
+* text=auto
+
+*.cs text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.proto text eol=lf
+*.shader text eol=lf
+*.hlsl text eol=lf
+*.cginc text eol=lf
+*.asmdef text eol=lf
+*.asmref text eol=lf
+*.meta text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.ps1 text eol=crlf
+LICENSE text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+*.dll -text -diff
+*.exe -text -diff
+*.bytes -text -diff
+*.snk -text -diff
+*.unitypackage -text -diff
+*.resonitepackage -text -diff
+*.zip -text -diff
+*.png -text -diff
+*.jpg -text -diff
+*.jpeg -text -diff
+*.gif -text -diff

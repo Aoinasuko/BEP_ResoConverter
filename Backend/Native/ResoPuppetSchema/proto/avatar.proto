@@ -1,0 +1,122 @@
+syntax = "proto3";
+option csharp_namespace = "nadena.dev.ndmf.proto";
+
+package nadena.dev.ndmf.proto;
+
+import "proto/objects.proto";
+import "proto/base_types.proto";
+
+message AvatarDescriptor {
+  Vector eye_position = 1;
+  optional VisemeConfig viseme_config = 2;
+  optional EyelookConfig eyelook_config = 3;
+  HumanoidBones bones = 4;
+  optional ObjectID jaw_bone = 20;
+  optional Quaternion jaw_closed_rotation = 21;
+  optional Quaternion jaw_open_rotation = 22;
+}
+
+message HumanoidBones {
+  ObjectID head = 1;
+  optional ObjectID chest = 2;
+  optional ObjectID upper_chest = 3;
+  optional ObjectID neck = 4;
+  ObjectID hips = 5;
+  ObjectID spine = 6;
+
+  Arm left_arm = 10;
+  Arm right_arm = 11;
+  
+  Leg left_leg = 20;
+  Leg right_leg = 21;
+}
+
+message Leg {
+  optional ObjectID upper_leg = 2;
+  optional ObjectID lower_leg = 3;
+  optional ObjectID foot = 4;
+  optional ObjectID toe = 5;
+}
+
+message Arm {
+  optional ObjectID shoulder = 1;
+  optional ObjectID upper_arm = 2;
+  optional ObjectID lower_arm = 3;
+  ObjectID hand = 4;
+
+  optional Finger thumb = 5;
+  optional Finger index = 6;
+  optional Finger middle = 7;
+  optional Finger ring = 8;
+  optional Finger pinky = 9;
+}
+
+message Finger {
+  optional ObjectID metacarpal = 1;
+  optional ObjectID proximal = 2;
+  optional ObjectID intermediate = 3;
+  optional ObjectID distal = 4;
+  optional ObjectID tip = 5;
+}
+
+message EyelookConfig {
+  optional ObjectID left_eye_transform = 1;
+  optional ObjectID right_eye_transform = 2;
+
+  optional Vector look_forward = 3;
+  optional Vector look_up = 4;
+  optional Vector look_right = 5;
+  optional Vector look_left = 6;
+  optional Vector look_down = 7;
+  
+  oneof eyelid_config {
+    BlendshapeEyelidConfig blendshape = 100;
+    BoneEyelidConfig bone = 101;
+  }
+}
+
+message BlendshapeEyelidConfig {
+  ObjectID eyelid_mesh = 1;
+  
+  optional string blink = 2;
+  optional string look_up = 3;
+  optional string look_down = 4;
+}
+
+message BoneEyelidConfig {
+  ObjectID upper_left_eyelid = 1;
+  ObjectID lower_left_eyelid = 2;
+  ObjectID upper_right_eyelid = 3;
+  ObjectID lower_right_eyelid = 4;
+  
+  LRVector default_state = 5;
+  LRVector look_up = 6;
+  LRVector look_down = 7;
+  LRVector closed_state = 8;
+}
+
+message LRVector {
+  Vector left = 1;
+  Vector right = 2;
+}
+
+message VisemeConfig {
+  ObjectID viseme_mesh = 1;
+  
+  optional string shape_silence = 2;
+  optional string shape_PP = 3;
+  optional string shape_FF = 4;
+  optional string shape_TH = 5;
+  optional string shape_DD = 6;
+  optional string shape_kk = 7;
+  optional string shape_CH = 8;
+  optional string shape_SS = 9;
+  optional string shape_nn = 10;
+  optional string shape_RR = 11;
+  optional string shape_aa = 12;
+  optional string shape_E = 13;
+  optional string shape_ih = 14;
+  optional string shape_oh = 15;
+  optional string shape_ou = 16;
+  optional string shape_laugh = 17;
+}

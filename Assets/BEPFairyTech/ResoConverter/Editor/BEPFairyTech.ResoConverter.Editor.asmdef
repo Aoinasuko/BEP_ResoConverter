@@ -1,0 +1,10 @@
+{
+  "name": "BEPFairyTech.ResoConverter.Editor",
+  "rootNamespace": "BEPFairyTech.ResoConverter",
+  "references": [],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["BEP.ResoConverter.Schema.dll", "Google.Protobuf.dll"],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}
