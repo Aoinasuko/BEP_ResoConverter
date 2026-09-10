@@ -65,7 +65,7 @@ namespace BEPFairyTech.ResoConverter
             GUILayout.Label("ResoConverter", new GUIStyle(EditorStyles.boldLabel) { fontSize = 24 });
             EditorGUILayout.Space(8);
             EditorGUILayout.LabelField("シーン上のモデルをResoniteへ", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(".resonitepackageを書き出します。クリップボードから貼り付けるか、Resoniteへドラッグ＆ドロップして取り込めます。", MessageType.Info);
+            EditorGUILayout.HelpBox(".resonitepackageを書き出します。コピー後にResoniteのウィンドウでCtrl+Vを押すか、ファイルをドラッグ＆ドロップして取り込めます。", MessageType.Info);
 
             using (new EditorGUI.DisabledScope(ResoConverter.IsBusy))
             {
@@ -130,13 +130,14 @@ namespace BEPFairyTech.ResoConverter
                     {
                         ResoniteClipboard.CopyPackage(copyPath);
                         error = null;
-                        clipboardMessage = "コピーしました。Resoniteで「Paste content from clipboard」またはCtrl+Vを使って取り込めます。";
+                        clipboardMessage = "コピーしました。Resoniteのウィンドウを選び、Ctrl+Vで貼り付けてください。VRではダッシュのFilesタブから出力ファイルを開くこともできます。";
                     }
                     catch (Exception e) { error = e.Message; clipboardMessage = null; }
                 }
             }
             EditorGUILayout.LabelField(string.IsNullOrEmpty(copyPath) ? "変換が完了するとコピーできます。" :
                 "コピー対象: " + Path.GetFileName(copyPath), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField("Resoniteの貼り付けボタンではローカルファイルを取り込めない場合があります。Ctrl+V、ドラッグ＆ドロップ、Filesタブを使用してください。", EditorStyles.wordWrappedMiniLabel);
             if (!string.IsNullOrEmpty(clipboardMessage)) EditorGUILayout.HelpBox(clipboardMessage, MessageType.Info);
 
             if (ResoConverter.IsBusy)

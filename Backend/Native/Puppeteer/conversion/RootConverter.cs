@@ -139,15 +139,7 @@ public partial class RootConverter : IDisposable
         _root.AttachComponent<f.ObjectRoot>();
         if (!_options.asAvatar)
         {
-            _root.AttachComponent<f.Grabbable>();
-            var itemBounds = await BepBounds.Compute(visibleSourceRenderers, _root);
-            await new f.ToWorld();
-            if (float.IsFinite(itemBounds.Size.y))
-            {
-                var collider = _root.AttachComponent<f.BoxCollider>();
-                collider.Size.Value = MathX.Max(itemBounds.Size, new float3(0.001f));
-                collider.Offset.Value = itemBounds.Center;
-            }
+            await ConfigureItemGrab(visibleSourceRenderers);
         }
         if (_options.asAvatar && _options.useStandardSize)
         {

@@ -29,6 +29,8 @@ internal static class NativeVerification
                 .Select(r => r.Reference.Target).Where(r => r != null).ToArray();
             var bounds = await BepBounds.Compute(visibleRenderers, world.RootSlot);
             await new ToWorld();
+            var itemGrab = container.GetComponentsInChildren<AvatarRoot>().Any()
+                ? null : await ItemGrabVerification.Inspect(world, container, visibleRenderers);
             var blinkTargets = new List<string>();
             foreach (var driver in container.GetComponentsInChildren<ValueDriver<float>>().Where(d => d.Slot.Name == "BEP Selected Blink"))
             {
@@ -55,11 +57,14 @@ internal static class NativeVerification
                 jawDrivers = container.GetComponentsInChildren<VolumeMeter>().Count(d => d.Slot.Name == "BEP Voice Jaw"),
                 grabbableCount = container.GetComponentsInChildren<Grabbable>().Count(),
                 rootBoxColliders = container.GetComponentsInChildren<BoxCollider>().Count(),
+                itemGrab = itemGrab?.Details,
             };
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await new ToBackground();
             File.WriteAllText(packagePath + ".inspection.json", json);
             Console.WriteLine("BEP-VERIFY " + JsonSerializer.Serialize(report));
+            if (itemGrab is { Verified: false })
+                throw new InvalidOperationException("The exported item failed native collider/grab verification.");
         }
         finally
         {

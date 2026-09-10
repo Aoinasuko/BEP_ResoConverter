@@ -2,7 +2,7 @@
 
 Unityのシーンに配置したVRChat用アバター・3Dモデルを、Resoniteへ取り込める `.resonitepackage` に変換するUnity Editorツールです。
 
-アバターの揺れ物・表情・材質やModular Avatarの配置設定を可能な範囲で移し、ポーズを固定した置物としての出力にも対応します。v0.1では、対応する設定をResoniteの標準コンポーネントへ変換します。
+アバターの揺れ物・表情・材質やModular Avatarの配置設定を可能な範囲で移し、ポーズを固定した置物としての出力にも対応します。対応する設定をResoniteの標準コンポーネントへ変換します。
 
 ## 必要な環境
 
@@ -16,16 +16,20 @@ VRChat SDK、Modular Avatar、NDMF、lilToonは任意です。未導入でもツ
 
 ## インストールと使い方
 
-1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.1.unitypackage` をダウンロードします。
+1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.1.1.unitypackage` をダウンロードします。
 2. 対象のUnityプロジェクトで `Assets → Import Package → Custom Package…` を選び、パッケージをインポートします。
 3. `BEP Fairy Tech → ResoConverter` を開きます。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 4. Hierarchy上の対象ルートを指定し、「アバター」または「3Dモデル・アイテム」を選びます。
 5. 瞬き、サイズ、ポーズ固定などの設定とResonite本体のフォルダーを確認し、UnityのAssetsフォルダー外へ書き出します。
-6. 出力した `.resonitepackage` をResoniteへドラッグ＆ドロップして取り込みます。Windowsでは「成果物をクリップボードにコピー」を押し、Resoniteで `Ctrl+V` または `Paste content from clipboard` を使うこともできます。
+6. 出力した `.resonitepackage` をResoniteへドラッグ＆ドロップして取り込みます。Windowsでは「成果物をクリップボードにコピー」を押し、Resoniteでキーボードの `Ctrl+V` を使うこともできます。VRではDashの **Files** タブから出力ファイルを開いてください。
 
 Project内のPrefabアセットは直接の対象にできません。シーンへ配置してから選択してください。変換は一時コピーで行い、元のシーンやモデルアセットは書き換えません。
 
 クリップボードへのコピーは、変換に成功した最新の出力が対象です。出力前はボタンを押せません。貼り付けが完了するまで、コピー元の `.resonitepackage` を移動・削除しないでください。
+
+**既知の問題：Resonite標準Dashの `Paste content from clipboard` ボタンからは取り込めない報告があり、v0.1.1でも未解消です。** 上記のキーボード操作、ドラッグ＆ドロップ、またはFilesタブを使用してください。v0.1で記載したDashボタンからの取り込み案内を訂正します。
+
+v0.1で出力したアイテムを掴めない場合は、v0.1.1をインポートして元のUnityシーンから再変換してください。更新前に作成した `.resonitepackage` は自動修正されません。
 
 ## 主な機能
 
@@ -39,7 +43,7 @@ Project内のPrefabアセットは直接の対象にできません。シーン�
 | 瞬き・口パク | 瞬き用BlendShapeの選択、VRC Viseme・Jaw Flap設定の変換 |
 | アバターサイズ | 標準の高さ1.8m、または元のアバターサイズを選択 |
 | ポーズ固定 | 現在のポーズとBlendShapeを静的メッシュへ焼き込み、置物として出力 |
-| クリップボードへコピー | Windowsで最新の変換成果物をコピーし、Resoniteへ貼り付け |
+| クリップボードへコピー | Windowsで最新の変換成果物をコピーし、キーボードのCtrl+VでResoniteへ貼り付け |
 
 詳しい使い方と対応範囲は[日本語マニュアル](Assets/BEPFairyTech/ResoConverter/README-ja.md)を参照してください。
 
