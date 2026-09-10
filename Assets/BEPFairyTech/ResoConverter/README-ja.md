@@ -12,25 +12,29 @@ ResoniteのエンジンDLLを同梱せず、指定されたインストール先
 
 ## 使い方
 
-1. パッケージをインポートし、`Assets/BEPFairyTech/ResoConverter` を配置します。
+1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.1.2.unitypackage` を取得してインポートします。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 2. `BEP Fairy Tech → ResoConverter` を開きます。
 3. Hierarchy上の対象ルートを「変換対象」に指定します。Project内のPrefabアセットは対象にできません。
 4. 「アバター」または「3Dモデル・アイテム」を選びます。
 5. 必要に応じて瞬き用のメッシュとBlendShape、サイズ、ポーズ固定を設定します。
 6. Resonite本体のフォルダーを確認し、UnityのAssets外へ書き出します。
-7. 出力された `.resonitepackage` をResoniteへドラッグ＆ドロップします。Windowsでは「成果物をクリップボードにコピー」を押し、Resoniteでキーボードの `Ctrl+V` を使って取り込むこともできます。VRではDashの **Files** タブから出力ファイルを開いてください。
+7. 出力された `.resonitepackage` をResoniteへドラッグ＆ドロップします。Windowsでは「成果物を文字列としてコピー」を押し、同じPCのResoniteでキーボードの `Ctrl+V` を使って取り込むこともできます。VRではDashの **Files** タブから出力ファイルを開いてください。
 
 処理は一時コピーに対して行います。元のシーンやモデルアセットは書き換えません。
 
-「成果物をクリップボードにコピー」は変換ボタンの下にあり、変換に成功した最新の出力を対象にします。出力前は無効です。貼り付けが完了するまで、コピー元の `.resonitepackage` を移動・削除しないでください。
+「成果物を文字列としてコピー」は変換ボタンの下にあり、変換に成功した最新の出力を対象にします。出力前は無効です。コピーされるのは `.resonitepackage` の**絶対ファイルパスそのもの**です。パッケージ本体を文字列化・Base64化したデータや、URIではありません。日本語・空白・絵文字を含むファイル名にも対応します。
 
-**Resonite標準Dashの `Paste content from clipboard` ボタンから取り込めない問題は、v0.1.1でも未解消です。** キーボードの `Ctrl+V`、ドラッグ＆ドロップ、またはFilesタブを使用してください。v0.1で記載していたDashボタンからの取り込み案内を訂正します。
+同じPCで動くResoniteから取り込み、貼り付けが完了するまでコピー元の `.resonitepackage` を移動・削除しないでください。文字列だけを別のPCへコピーしても、モデルのデータは転送されません。
 
-## v0.1からの更新
+v0.1.2では文字列を読み取る貼り付け経路に対応するため、クリップボードへUnicode文字列だけを渡します。**Resonite標準Dashの `Paste content from clipboard` ボタンによる実機動作は未確認です。** 反応しない場合はキーボードの `Ctrl+V`、ドラッグ＆ドロップ、またはFilesタブを使用してください。
+
+## 以前の版からの更新
+
+v0.1.1で作成した `.resonitepackage` は再変換せずに使えます。v0.1.2をインポートした後、「成果物を文字列としてコピー」でコピーし直してください。
 
 v0.1.1では、出力したアイテムの当たり判定が空になり、掴めない場合がある問題を修正しました。メッシュの読込完了後に当たり判定を計算し、薄いモデルにも各軸の最低限の厚みを設定します。
 
-v0.1で出力したアイテムは自動修正されません。新しい `.unitypackage` をインポートしてから、元のUnityシーンで再度変換し、新しい `.resonitepackage` を取り込んでください。
+v0.1で出力したアイテムを掴めない場合は、最新の `.unitypackage` をインポートしてから、元のUnityシーンで再度変換し、新しい `.resonitepackage` を取り込んでください。古いファイルの当たり判定は、コピーし直すだけでは修正されません。
 
 ## 設定
 

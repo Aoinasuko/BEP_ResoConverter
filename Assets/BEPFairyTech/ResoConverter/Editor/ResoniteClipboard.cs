@@ -7,26 +7,17 @@ using System.Threading;
 
 namespace BEPFairyTech.ResoConverter
 {
-    /// <summary>Copies an exported package using the same file format as Windows Explorer.</summary>
+    /// <summary>Copies the absolute path of an exported package as Unicode text.</summary>
     public static class ResoniteClipboard
     {
         public static void CopyPackage(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) ||
-                !path.EndsWith(".resonitepackage", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("コピーする.resonitepackageファイルを指定してください。", nameof(path));
-            path = Path.GetFullPath(path);
-            if (!File.Exists(path)) throw new FileNotFoundException("出力ファイルが見つかりません。もう一度変換してください。", path);
-
+            byte[] text = CreatePackagePathTextData(path);
 #if UNITY_EDITOR_WIN
-            // Supply both formats: native file import and clipboard providers exposing text only.
-            byte[] files = CreateFileDropData(path);
-            byte[] text = Encoding.Unicode.GetBytes(path + "\0");
-            IntPtr fileMemory = IntPtr.Zero, textMemory = IntPtr.Zero, owner = IntPtr.Zero;
+            IntPtr textMemory = IntPtr.Zero, owner = IntPtr.Zero;
             bool opened = false;
             try
             {
-                fileMemory = Allocate(files);
                 textMemory = Allocate(text);
                 // A real owner is required by SetClipboardData. Message-only windows stay invisible.
                 owner = CreateWindowExW(0, "STATIC", "BEP ResoConverter Clipboard", 0,
@@ -39,16 +30,14 @@ namespace BEPFairyTech.ResoConverter
                 }
                 if (!opened) throw NativeError("クリップボードが使用中です。少し待ってから再試行してください。");
                 if (!EmptyClipboard()) throw NativeError("クリップボードを開けませんでした。");
-                if (SetClipboardData(15, fileMemory) == IntPtr.Zero) throw NativeError("ファイルをコピーできませんでした。");
-                fileMemory = IntPtr.Zero; // Windows owns successfully transferred global memory.
+                // CF_UNICODETEXT only: Resonite can read the plain path through its text clipboard provider.
                 if (SetClipboardData(13, textMemory) == IntPtr.Zero) throw NativeError("ファイルのパスをコピーできませんでした。");
-                textMemory = IntPtr.Zero;
+                textMemory = IntPtr.Zero; // Windows owns successfully transferred global memory.
             }
             finally
             {
                 if (opened) CloseClipboard();
                 if (owner != IntPtr.Zero) DestroyWindow(owner);
-                if (fileMemory != IntPtr.Zero) GlobalFree(fileMemory);
                 if (textMemory != IntPtr.Zero) GlobalFree(textMemory);
             }
 #else
@@ -56,15 +45,15 @@ namespace BEPFairyTech.ResoConverter
 #endif
         }
 
-        internal static byte[] CreateFileDropData(string absolutePath)
+        internal static byte[] CreatePackagePathTextData(string path)
         {
-            // DROPFILES: DWORD pFiles; POINT pt; BOOL fNC; BOOL fWide, followed by UTF-16 paths.
-            byte[] names = Encoding.Unicode.GetBytes(absolutePath + "\0\0");
-            byte[] data = new byte[20 + names.Length];
-            data[0] = 20;
-            data[16] = 1;
-            Buffer.BlockCopy(names, 0, data, 20, names.Length);
-            return data;
+            if (string.IsNullOrWhiteSpace(path) ||
+                !path.EndsWith(".resonitepackage", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("コピーする.resonitepackageファイルを指定してください。", nameof(path));
+            path = Path.GetFullPath(path);
+            if (!File.Exists(path)) throw new FileNotFoundException("出力ファイルが見つかりません。もう一度変換してください。", path);
+            // CF_UNICODETEXT is UTF-16LE with a terminating NUL, without a BOM, quotes or a URI prefix.
+            return Encoding.Unicode.GetBytes(path + "\0");
         }
 
 #if UNITY_EDITOR_WIN

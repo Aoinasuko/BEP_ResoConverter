@@ -28,61 +28,46 @@ namespace BEPFairyTech.ResoConverter.Tests
         }
 
         [Test]
-        public void FileDropUsesUnicodeHeaderAndDoubleNullListTerminator()
+        public void RelativePackagePathBecomesPlainAbsoluteText()
         {
-            const string path = "D:\\アバター 出力\\星🌟.resonitepackage";
-            byte[] data = ResoniteClipboard.CreateFileDropData(path);
-            using (var reader = new BinaryReader(new MemoryStream(data)))
-            {
-                uint namesOffset = reader.ReadUInt32();
-                Assert.That(namesOffset, Is.EqualTo(20));
-                Assert.That(reader.ReadInt32(), Is.Zero, "DROPFILES.pt.x");
-                Assert.That(reader.ReadInt32(), Is.Zero, "DROPFILES.pt.y");
-                Assert.That(reader.ReadInt32(), Is.Zero, "DROPFILES.fNC");
-                Assert.That(reader.ReadInt32(), Is.EqualTo(1), "DROPFILES.fWide");
-                var names = new UnicodeEncoding(false, false, true).GetString(data, (int)namesOffset, data.Length - (int)namesOffset);
-                Assert.That(names, Is.EqualTo(path + "\0\0"));
-            }
-        }
-
-#if UNITY_EDITOR_WIN
-        [Test]
-        public void WindowsShellDecodesOneUnicodePackageFromFileDrop()
-        {
-            const string path = "D:\\日本語 空白\\アバター🌟.resonitepackage";
-            byte[] data = ResoniteClipboard.CreateFileDropData(path);
-            IntPtr memory = GlobalAlloc(0x0042, new UIntPtr((uint)data.Length));
-            Assert.That(memory, Is.Not.EqualTo(IntPtr.Zero));
+            string directory = Path.Combine("Temp", "BEP-clipboard-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "model.ResonitePackage");
             try
             {
-                IntPtr pointer = GlobalLock(memory);
-                Assert.That(pointer, Is.Not.EqualTo(IntPtr.Zero));
-                try { Marshal.Copy(data, 0, pointer, data.Length); }
-                finally { GlobalUnlock(memory); }
-
-                // Ask the real Windows shell to decode the payload. This handle never enters
-                // the clipboard; GlobalFree below releases memory still owned by this test.
-                Assert.That(DragQueryFileW(memory, uint.MaxValue, null, 0), Is.EqualTo(1));
-                uint length = DragQueryFileW(memory, 0, null, 0);
-                Assert.That(length, Is.EqualTo(path.Length));
-                var filename = new StringBuilder((int)length + 1);
-                Assert.That(DragQueryFileW(memory, 0, filename, (uint)filename.Capacity), Is.EqualTo(length));
-                Assert.That(filename.ToString(), Is.EqualTo(path));
+                File.WriteAllBytes(path, new byte[] { 1 });
+                Assert.That(Path.IsPathRooted(path), Is.False);
+                byte[] data = ResoniteClipboard.CreatePackagePathTextData(path);
+                string decoded = new UnicodeEncoding(false, false, true).GetString(data);
+                Assert.That(decoded, Is.EqualTo(Path.GetFullPath(path) + "\0"),
+                    "Clipboard text must be exactly the absolute path with one NUL, without quotes, BOM or a URI prefix.");
             }
-            finally { GlobalFree(memory); }
+            finally { File.Delete(path); Directory.Delete(directory); }
         }
 
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-        private static extern uint DragQueryFileW(IntPtr drop, uint fileIndex, StringBuilder filename, uint length);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GlobalAlloc(uint flags, UIntPtr bytes);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GlobalLock(IntPtr memory);
-        [DllImport("kernel32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GlobalUnlock(IntPtr memory);
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GlobalFree(IntPtr memory);
-#endif
+        [Test]
+        public void UnicodePackagePathRoundTripsThroughNullTerminatedTextReader()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "BEP-日本語 空白🌟-" + Guid.NewGuid().ToString("N") + ".resonitepackage");
+            IntPtr memory = IntPtr.Zero;
+            try
+            {
+                File.WriteAllBytes(path, new byte[] { 1 });
+                string expected = Path.GetFullPath(path);
+                byte[] data = ResoniteClipboard.CreatePackagePathTextData(path);
+                Assert.That(data.Length, Is.EqualTo((expected.Length + 1) * 2));
+                Assert.That(data[data.Length - 2], Is.Zero);
+                Assert.That(data[data.Length - 1], Is.Zero);
+                // Read the native Unicode representation without changing the system clipboard.
+                memory = Marshal.AllocHGlobal(data.Length);
+                Marshal.Copy(data, 0, memory, data.Length);
+                Assert.That(Marshal.PtrToStringUni(memory), Is.EqualTo(expected));
+            }
+            finally
+            {
+                if (memory != IntPtr.Zero) Marshal.FreeHGlobal(memory);
+                File.Delete(path);
+            }
+        }
     }
 }
