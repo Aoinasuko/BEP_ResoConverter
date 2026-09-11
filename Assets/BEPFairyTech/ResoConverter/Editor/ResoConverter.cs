@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.2.0";
+        public const string Version = "0.3.0";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }
@@ -49,7 +49,7 @@ namespace BEPFairyTech.ResoConverter
                 }
                 problems.AddRange(ExpressionExporter.Validate(source, options));
                 if ((options.EnableHandExpressions || options.EnableMenuExpressions) && !BackendRunner.SupportsFacialExpressions())
-                    problems.Add("表情機能に対応した変換エンジンがありません。ResoConverter v0.2.0以降のパッケージを、変換エンジンも含めてインポートしてください。");
+                    problems.Add("表情機能に対応した変換エンジンがありません。ResoConverter v0.3.0以降のパッケージを、変換エンジンも含めてインポートしてください。");
             }
             if (!BackendRunner.IsResoniteFolder(options.ResonitePath))
                 problems.Add("Resonite本体のフォルダーを指定してください（FrooxEngine.dllがある場所）。");

@@ -38,10 +38,30 @@ public partial class RootConverter
         {
             var owner = host.AddSlot("Avatar User").AttachComponent<ReferenceField<User>>();
             host.AttachComponent<AvatarUserReferenceAssigner>().References.Add(owner.Reference);
+            var wearer = graph.ReadObject<User>(owner.Reference);
             var source = graph.Node<PoseSourceNode>("Wearer Finger Pose Source");
-            source.User.Target = graph.ReadObject<User>(owner.Reference);
-            var left = ExpressionGestures.Build(graph, host, source, Chirality.Left);
-            var right = ExpressionGestures.Build(graph, host, source, Chirality.Right);
+            source.User.Target = wearer;
+            var sourceField = host.AddSlot("Wearer Finger Source").AttachComponent<ReferenceField<IFingerPoseSourceComponent>>();
+            graph.DriveReference(sourceField.Reference, source);
+            var sourceValue = graph.ReadObject<IFingerPoseSourceComponent>(sourceField.Reference);
+            var controllers = new Dictionary<Chirality, ControllerExpressionState>();
+            INodeValueOutput<int> Hand(Chirality side)
+            {
+                var tracking = ExpressionTracking.Build(graph, host, sourceValue, side);
+                var gesture = ExpressionGestures.Build(graph, host, sourceValue, side, tracking);
+                if (settings.controllerGestures)
+                {
+                    var controller = ExpressionControllers.Build(graph, host, wearer, side);
+                    controllers[side] = controller;
+                    gesture = graph.Choose(controller.Active, controller.Gesture, gesture);
+                }
+                var output = host.AddSlot(side + " Gesture").AttachComponent<ValueField<int>>();
+                graph.Drive(output.Value, graph.Choose(graph.NotNull(wearer), gesture, graph.Constant(-1)));
+                return graph.Read(output.Value);
+            }
+            var left = Hand(Chirality.Left);
+            var right = Hand(Chirality.Right);
+            if (settings.controllerGestures) ExpressionHandPoses.Build(_root, host, graph, wearer, controllers);
             for (var i = handRules.Count - 1; i >= 0; i--)
             {
                 var rule = handRules[i];

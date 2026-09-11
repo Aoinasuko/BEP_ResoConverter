@@ -50,10 +50,11 @@ namespace BEPFairyTech.ResoConverter
         internal static BackendExpressionSettings Build(GameObject source, ConversionOptions options,
             PreparedScene prepared, AvatarSerializer serializer, List<string> warnings)
         {
-            var result = new BackendExpressionSettings();
+            var result = new BackendExpressionSettings { controllerGestures = false };
             if (options == null || options.Kind != ExportKind.Avatar) return result;
             result.handEnabled = options.EnableHandExpressions;
             result.menuEnabled = options.EnableMenuExpressions;
+            result.controllerGestures = result.handEnabled && options.UseControllerHandPoses;
             if (!result.handEnabled && !result.menuEnabled) return result;
             var errors = Validate(source, options);
             if (errors.Count != 0) throw new InvalidOperationException(string.Join("\n", errors));

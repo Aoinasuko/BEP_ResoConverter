@@ -18,6 +18,7 @@ namespace BEPFairyTech.ResoConverter
         public SkinnedMeshRenderer BlinkRenderer;
         public string BlinkShape = "";
         public bool EnableHandExpressions;
+        public bool UseControllerHandPoses = true;
         public bool EnableMenuExpressions;
         public List<HandExpressionSettings> HandExpressions = new();
         public List<MenuExpressionSettings> MenuExpressions = new();

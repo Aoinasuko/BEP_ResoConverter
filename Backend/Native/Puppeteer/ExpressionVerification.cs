@@ -25,7 +25,8 @@ internal static class ExpressionVerification
         var scene = world.RootSlot.AddSlot("BEP expression verification inputs");
         var checks = new List<string>();
         var originalSelection = selection.Value;
-        var oldSources = new List<(PoseNode node, FrooxEngine.ProtoFlux.INodeObjectOutput<IFingerPoseSourceComponent> source)>();
+        var originalUserRoot = world.LocalUser.Root;
+        var wearerReference = host.FindChild("Avatar User")?.GetComponent<ReferenceField<User>>().Reference;
         var redirected = new List<(FieldDrive<float> drive, IField<float> target)>();
         var blinkSources = new List<(ValueDriver<float> driver, IValue<float> source)>();
         var liveBlinkChecks = 0;
@@ -101,25 +102,25 @@ internal static class ExpressionVerification
 
             if (hands.Count > 0)
             {
-                var source = scene.AttachComponent<FingerReferencePoseSource>();
-                var sourceInput = scene.AttachComponent<RefObjectInput<IFingerPoseSourceComponent>>();
-                sourceInput.Target.Target = source;
-                var bones = new Dictionary<BodyNode, Slot>();
-                foreach (var side in new[] { Chirality.Left, Chirality.Right })
+                var userRoot = scene.AddSlot("Native stream test wearer").AttachComponent<UserRoot>();
+                world.LocalUser.Root = userRoot;
+                var source = userRoot.Slot.AttachComponent<FingerPoseStreamManager>();
+                source.Setup(world.LocalUser, 1, 0);
+                // Supply raw native streams without requiring a physical headset;
+                // the standard component is still used for all source reads.
+                source.User.Target = null;
+                source.TracksMetacarpals.Value = true;
+                userRoot.Slot.AttachComponent<AvatarFingerPoseInfo>().FingerPoseSource.Target = source;
+                wearerReference!.Target = world.LocalUser;
+                void Pose(Chirality side, int gesture)
                 {
-                    var hand = scene.AddSlot(side + " hand");
-                    source.Bones.Add(BodyNode.LeftHand.GetSide(side), hand);
-                    for (var node = BodyNode.LeftThumb_Metacarpal.GetSide(side); node <= BodyNode.LeftPinky_Tip.GetSide(side); node++)
+                    for (var bone = BodyNode.LeftThumb_Metacarpal.GetSide(side); bone <= BodyNode.LeftPinky_Tip.GetSide(side); bone++)
                     {
-                        var bone = hand.AddSlot(node.ToString());
-                        bones[node] = bone;
-                        source.Bones.Add(node, bone);
+                        ExpressionHandPoses.GetPose(bone, gesture, out _, out var rotation);
+                        var index = bone.GetFingerNodeIndex(out _) + (side == Chirality.Left ? 0 : 24);
+                        source.Stream.Target[index] = rotation;
                     }
-                }
-                foreach (var node in host.GetComponentsInChildren<PoseNode>())
-                {
-                    oldSources.Add((node, node.PoseSource.Target));
-                    node.PoseSource.Target = sourceInput;
+                    (side == Chirality.Left ? source.LeftIsTracking : source.RightIsTracking).Target.Value = true;
                 }
                 var leftOutput = host.FindChild("Left Gesture").GetComponent<ValueField<int>>().Value;
                 var rightOutput = host.FindChild("Right Gesture").GetComponent<ValueField<int>>().Value;
@@ -127,24 +128,22 @@ internal static class ExpressionVerification
                 for (var left = 0; left < 8; left++)
                 for (var right = 0; right < 8; right++)
                 {
-                    SetPose(bones, Chirality.Left, left);
-                    SetPose(bones, Chirality.Right, right);
+                    Pose(Chirality.Left, left);
+                    Pose(Chirality.Right, right);
                     Press(-1); await Settle();
                     if (leftOutput.Value != left || rightOutput.Value != right)
                         throw new InvalidOperationException($"Finger pose classifier expected ({left},{right}), got ({leftOutput.Value},{rightOutput.Value}); curls: "
-                            + string.Join(", ", host.Children.Where(s => s.Name.Contains("Finger Curl")).Select(s => s.Name + "=" + s.GetComponent<ValueField<float>>().Value.Value))
-                            + "; groups: " + string.Join(",", host.GetComponentsInChildren<PoseNode>().Select(n => $"{n.Group?.Name} {n.Group?.RegisteredForContinuousChanges} {n.Group?.IsNodeContinuouslyChanging(n)}").Distinct())
-                            + "; actual right middle rotations " + bones[BodyNode.RightMiddleFinger_Proximal].LocalRotation + " " + bones[BodyNode.RightMiddleFinger_Distal].LocalRotation);
+                            + string.Join(", ", host.Children.Where(s => s.Name.Contains("Finger Curl")).Select(s => s.Name + "=" + s.GetComponent<ValueField<float>>().Value.Value)));
                     var index = hands.FindIndex(rule => (rule.left == "Any" || ExpressionGestures.Parse(rule.left) == left)
                         && (rule.right == "Any" || ExpressionGestures.Parse(rule.right) == right));
                     if (ruleOutput.Value != index) throw new InvalidOperationException("Hand rule priority is incorrect.");
                     CheckValues(index < 0 ? null : hands[index].values, $"hand pair {left}/{right}");
                 }
-                SetPose(bones, Chirality.Left, 1); SetPose(bones, Chirality.Right, 3);
+                Pose(Chirality.Left, 1); Pose(Chirality.Right, 3);
                 if (menus.Count > 0)
                 {
                     Press(1); await Settle(); CheckValues(menus[0].values, "menu overrides an active hand expression");
-                    SetPose(bones, Chirality.Left, 2); SetPose(bones, Chirality.Right, 7);
+                    Pose(Chirality.Left, 2); Pose(Chirality.Right, 7);
                     await Settle(); CheckValues(menus[0].values, "menu remains fixed when fingers change");
                     Press(0); await Settle(); CheckValues(null, "fixed initial ignores hand expression");
                     Press(-1); await Settle();
@@ -152,20 +151,26 @@ internal static class ExpressionVerification
                         && (rule.right == "Any" || ExpressionGestures.Parse(rule.right) == 7));
                     CheckValues(index < 0 ? null : hands[index].values, "return to current hand expression");
                 }
-                foreach (var missing in new[] { BodyNode.LeftMiddleFinger_Distal, BodyNode.RightThumb_Proximal })
+                foreach (var tracking in new[] { source.LeftIsTracking.Target, source.RightIsTracking.Target })
                 {
-                    source.Bones.Remove(missing);
+                    tracking.Value = false;
                     Press(-1); await Settle();
-                    if (ruleOutput.Value != -1) throw new InvalidOperationException("A missing finger bone activates a hand expression.");
-                    CheckValues(null, "missing " + missing + " restores live base");
-                    source.Bones.Add(missing, bones[missing]);
+                    if (ruleOutput.Value != -1) throw new InvalidOperationException("Lost stream tracking retains a hand expression.");
+                    CheckValues(null, "native stream tracking loss restores live base");
+                    tracking.Value = true;
                     await Settle();
                 }
-                foreach (var (node, original) in oldSources) node.PoseSource.Target = original;
+                for (var index = 0; index < 48; index++) source.Stream.Target[index] = floatQ.Identity;
+                await Settle();
+                if (leftOutput.Value != 2 || rightOutput.Value != 2)
+                    throw new InvalidOperationException("Tracked identity rotations are incorrectly treated as missing tracking.");
+                checks.Add("zero-position and identity-rotation tracked stream stays valid");
+                wearerReference.Target = null;
                 await Settle();
                 if (leftOutput.Value != -1 || rightOutput.Value != -1 || ruleOutput.Value != -1)
                     throw new InvalidOperationException("Removing the wearer/source retains the previous hand expression.");
                 CheckValues(null, "removing wearer source releases the last hand expression");
+                world.LocalUser.Root = originalUserRoot;
             }
 
             Press(0);
@@ -182,7 +187,8 @@ internal static class ExpressionVerification
         finally
         {
             await new ToWorld();
-            foreach (var (node, source) in oldSources) node.PoseSource.Target = source;
+            if (wearerReference != null) wearerReference.Target = null;
+            world.LocalUser.Root = originalUserRoot;
             foreach (var (drive, target) in redirected) drive.ForceLink(target);
             foreach (var (driver, source) in blinkSources) driver.ValueSource.Target = source;
             selection.Value = originalSelection;
@@ -254,6 +260,7 @@ internal static class ExpressionVerification
                 || originalFields.Where((f, i) => MathF.Abs(f.Value - originalValues[i]) > .0001f).Any())
                 throw new InvalidOperationException("Selecting an expression on a second avatar changes the first avatar.");
             checks.Add("second avatar selection leaves the first avatar independent");
+            var controller = await ControllerExpressionVerification.Verify(world, copyHost, wearer, checks);
             equipment.Dequip(null);
             copy.SetParent(scene);
             for (var frame = 0; frame < 20; frame++) await new NextUpdate();
@@ -262,7 +269,7 @@ internal static class ExpressionVerification
             checks.Add("actual avatar dequip clears wearer and removes menu registration");
             return new { verified = true, avatarRootSlot = avatar.Slot.Name, expressionParent = host.Parent.Name,
                 equipTraversalIncludesAssigner = assigner != null, wearerFingerSourceVerified = copyOwner != null,
-                menuRegisteredWithWearer = menu != null, independentCopy = true };
+                menuRegisteredWithWearer = menu != null, independentCopy = true, controller };
         }
         finally
         {

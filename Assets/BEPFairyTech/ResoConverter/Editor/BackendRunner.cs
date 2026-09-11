@@ -40,7 +40,7 @@ namespace BEPFairyTech.ResoConverter
                     var entry = archive.GetEntry("bep-features.json");
                     if (entry == null) return false;
                     using (var reader = new StreamReader(entry.Open()))
-                        supportsExpressions = JsonUtility.FromJson<BackendFeatures>(reader.ReadToEnd())?.facialExpressions >= 1;
+                        supportsExpressions = JsonUtility.FromJson<BackendFeatures>(reader.ReadToEnd())?.facialExpressions >= 2;
                 }
             }
             catch (InvalidDataException) { }

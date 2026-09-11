@@ -20,6 +20,20 @@ internal sealed class ExpressionGraph(Slot root)
         return input;
     }
 
+    public INodeObjectOutput<T> Reference<T>(T value) where T : class, IWorldElement
+    {
+        var input = Node<RefObjectInput<T>>("Reference " + typeof(T).Name);
+        input.Target.Target = value;
+        return input;
+    }
+
+    public INodeValueOutput<bool> NotNull<T>(INodeObjectOutput<T> value) where T : class
+    {
+        var node = Node<NotNull<T>>("Has " + typeof(T).Name);
+        node.Instance.Target = value;
+        return node;
+    }
+
     public INodeValueOutput<T> Read<T>(IField<T> field) where T : unmanaged
     {
         var source = Node<Core.ValueSource<T>>("Read " + field.Name);
@@ -46,6 +60,27 @@ internal sealed class ExpressionGraph(Slot root)
         var relay = Node<ContinuouslyChangingValueRelay<T>>("Sample live finger pose");
         relay.Input.Target = value;
         return relay;
+    }
+
+    public INodeObjectOutput<T> ContinuousObject<T>(INodeObjectOutput<T> value) where T : class
+    {
+        var relay = Node<ContinuouslyChangingObjectRelay<T>>("Read current " + typeof(T).Name);
+        relay.Input.Target = value;
+        return relay;
+    }
+
+    public void DriveReference<T>(SyncRef<T> target, INodeObjectOutput<T> value) where T : class, IWorldElement
+    {
+        var drive = Node<Core.ReferenceDrive<T>>("Drive reference " + target.Name);
+        drive.Target.Target = value;
+        if (!drive.TrySetRootTarget(target)) throw new InvalidOperationException("Cannot drive expression reference.");
+    }
+
+    public INodeObjectOutput<T> ChooseObject<T>(INodeValueOutput<bool> condition, INodeObjectOutput<T> yes, INodeObjectOutput<T> no) where T : class
+    {
+        var node = Node<ObjectConditional<T>>("Choose " + typeof(T).Name);
+        node.Condition.Target = condition; node.OnTrue.Target = yes; node.OnFalse.Target = no;
+        return node;
     }
 
     public INodeValueOutput<T> Choose<T>(INodeValueOutput<bool> condition, INodeValueOutput<T> yes, INodeValueOutput<T> no) where T : unmanaged
@@ -88,6 +123,8 @@ internal sealed class ExpressionGraph(Slot root)
         }
         return result;
     }
+
+    public INodeValueOutput<bool> Any(params INodeValueOutput<bool>[] values) => Not(All(values.Select(Not).ToArray()));
 
     public INodeValueOutput<float> Angle(INodeValueOutput<floatQ> a, INodeValueOutput<floatQ> b)
     {

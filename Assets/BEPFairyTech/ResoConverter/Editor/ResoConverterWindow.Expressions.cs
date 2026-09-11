@@ -22,6 +22,11 @@ namespace BEPFairyTech.ResoConverter
                 "両手の形に合わせて表情を変える", options.EnableHandExpressions);
             if (options.EnableHandExpressions)
             {
+                options.UseControllerHandPoses = EditorGUILayout.ToggleLeft(
+                    "コントローラー操作で手の形も切り替える", options.UseControllerHandPoses);
+                EditorGUILayout.LabelField(options.UseControllerHandPoses
+                    ? "Oculus/Meta Touchはトリガー・グリップ・親指の接触で手の形を切り替えます。Viveなど、ほかのコントローラーは現在の指の姿勢から判定します。"
+                    : "現在の指の姿勢からハンドサインを判定します。", EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.LabelField("左手・右手の両方の条件で判定します。複数の条件に一致すると、上の行を優先します。", EditorStyles.wordWrappedMiniLabel);
                 for (int i = 0; i < options.HandExpressions.Count; i++)
                 {

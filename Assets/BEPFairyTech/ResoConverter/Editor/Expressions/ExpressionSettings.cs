@@ -30,6 +30,7 @@ namespace BEPFairyTech.ResoConverter
     {
         public bool handEnabled;
         public bool menuEnabled;
+        public bool controllerGestures = true;
         public BackendExpressionTarget[] targets = Array.Empty<BackendExpressionTarget>();
         public BackendHandExpression[] handRules = Array.Empty<BackendHandExpression>();
         public BackendMenuExpression[] menuEntries = Array.Empty<BackendMenuExpression>();

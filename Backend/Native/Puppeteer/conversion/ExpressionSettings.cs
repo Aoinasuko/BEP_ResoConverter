@@ -4,6 +4,7 @@ internal sealed class ExpressionSettings
 {
     public bool handEnabled { get; set; }
     public bool menuEnabled { get; set; }
+    public bool controllerGestures { get; set; } = true;
     public List<ExpressionTarget> targets { get; set; } = new();
     public List<HandExpressionRule> handRules { get; set; } = new();
     public List<MenuExpressionEntry> menuEntries { get; set; } = new();

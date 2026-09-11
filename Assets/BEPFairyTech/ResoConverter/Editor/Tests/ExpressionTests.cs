@@ -25,6 +25,10 @@ namespace BEPFairyTech.ResoConverter.Tests
             var options = new ConversionOptions();
             Assert.That(options.EnableHandExpressions, Is.False);
             Assert.That(options.EnableMenuExpressions, Is.False);
+            Assert.That(options.UseControllerHandPoses, Is.True);
+            Assert.That(new BackendExpressionSettings().controllerGestures, Is.True);
+            Assert.That(JsonUtility.FromJson<ConversionOptions>("{}").UseControllerHandPoses, Is.True,
+                "Existing saved options without the new preference must start with controller gestures enabled.");
             Assert.That(options.HandExpressions, Is.Empty);
             Assert.That(options.MenuExpressions, Is.Empty);
             foreach (ExpressionHandPose pose in Enum.GetValues(typeof(ExpressionHandPose)))
@@ -33,6 +37,69 @@ namespace BEPFairyTech.ResoConverter.Tests
             Assert.That(restored.HandExpressions.Select(row => row.Left), Is.EqualTo(Enum.GetValues(typeof(ExpressionHandPose))));
             Assert.That(restored.HandExpressions.All(row => row.SampleTime == 0.25f), Is.True, "Inherited clip settings must be serialized by Unity.");
             Assert.That(new ExpressionClipSettings().SampleTime, Is.Zero);
+        }
+
+        [Test]
+        public void ControllerInputPreferenceSurvivesAvatarExportAndBackendSettingsJson()
+        {
+            var source = Source(out _);
+            var options = new ConversionOptions { EnableHandExpressions = true };
+            options.HandExpressions.Add(new HandExpressionSettings {
+                Left = ExpressionHandPose.Victory, Right = ExpressionHandPose.Any,
+                Clip = Clip("Face", "Smile", AnimationCurve.Constant(0, 1, 75))
+            });
+            using (var prepared = ScenePreparer.Prepare(source, false, false, null, ""))
+            {
+                var serializer = new AvatarSerializer();
+                serializer.Export(prepared.Root, prepared.Avatar, false).GetAwaiter().GetResult();
+                foreach (bool enabled in new[] { true, false })
+                {
+                    options.UseControllerHandPoses = enabled;
+                    var restoredOptions = JsonUtility.FromJson<ConversionOptions>(JsonUtility.ToJson(options));
+                    Assert.That(restoredOptions.UseControllerHandPoses, Is.EqualTo(enabled));
+                    var data = ExpressionExporter.Build(source, restoredOptions, prepared, serializer, new List<string>());
+                    var settings = new BackendSettings { asAvatar = true, expressions = data };
+                    var restored = JsonUtility.FromJson<BackendSettings>(JsonUtility.ToJson(settings));
+                    Assert.That(restored.expressions.handEnabled, Is.True);
+                    Assert.That(restored.expressions.controllerGestures, Is.EqualTo(enabled));
+                    Assert.That(restored.expressions.handRules.Single().left, Is.EqualTo("Victory"));
+                    Assert.That(restored.expressions.handRules.Single().values.Single().value, Is.EqualTo(0.75f));
+                }
+            }
+        }
+
+        [Test]
+        public void ItemAndDisabledHandModesNeverRequestControllerPoseDriving()
+        {
+            var source = Source(out _);
+            var clip = Clip("Face", "Smile", AnimationCurve.Constant(0, 1, 50));
+            using (var prepared = ScenePreparer.Prepare(source, false, false, null, ""))
+            {
+                var serializer = new AvatarSerializer();
+                serializer.Export(prepared.Root, prepared.Avatar, false).GetAwaiter().GetResult();
+                var options = new ConversionOptions { UseControllerHandPoses = true };
+                // An invalid dormant hand row must not be sampled or validated.
+                options.HandExpressions.Add(new HandExpressionSettings());
+                var disabled = ExpressionExporter.Build(source, options, prepared, serializer, new List<string>());
+                Assert.That(disabled.handEnabled, Is.False);
+                Assert.That(disabled.controllerGestures, Is.False);
+                Assert.That(disabled.targets, Is.Empty);
+
+                options.EnableMenuExpressions = true;
+                options.MenuExpressions.Add(new MenuExpressionSettings { Name = "Smile", Clip = clip });
+                var menuOnly = ExpressionExporter.Build(source, options, prepared, serializer, new List<string>());
+                Assert.That(menuOnly.menuEnabled, Is.True);
+                Assert.That(menuOnly.controllerGestures, Is.False);
+                Assert.That(menuOnly.menuEntries.Single().values.Single().value, Is.EqualTo(0.5f));
+
+                options.Kind = ExportKind.Model;
+                options.EnableHandExpressions = true;
+                var item = ExpressionExporter.Build(source, options, prepared, serializer, new List<string>());
+                Assert.That(item.handEnabled, Is.False);
+                Assert.That(item.menuEnabled, Is.False);
+                Assert.That(item.controllerGestures, Is.False);
+                Assert.That(item.targets, Is.Empty);
+            }
         }
 
         [Test]

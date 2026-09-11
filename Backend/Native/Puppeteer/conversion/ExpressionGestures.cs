@@ -19,14 +19,13 @@ internal static class ExpressionGestures
     }
 
     internal static INodeValueOutput<int> Build(ExpressionGraph graph, Slot host,
-        INodeObjectOutput<IFingerPoseSourceComponent> source, Chirality side)
+        INodeObjectOutput<IFingerPoseSourceComponent> source, Chirality side, INodeValueOutput<bool> tracking)
     {
         var proximal = new[] { BodyNode.LeftThumb_Proximal, BodyNode.LeftIndexFinger_Proximal,
             BodyNode.LeftMiddleFinger_Proximal, BodyNode.LeftRingFinger_Proximal, BodyNode.LeftPinky_Proximal };
         var distal = new[] { BodyNode.LeftThumb_Distal, BodyNode.LeftIndexFinger_Distal,
             BodyNode.LeftMiddleFinger_Distal, BodyNode.LeftRingFinger_Distal, BodyNode.LeftPinky_Distal };
         var curls = new INodeValueOutput<float>[5];
-        var valid = new List<INodeValueOutput<bool>>();
         for (var finger = 0; finger < 5; finger++)
         {
             PoseNode Pose(BodyNode bone)
@@ -38,15 +37,12 @@ internal static class ExpressionGestures
             }
             var near = Pose(proximal[finger]);
             var far = Pose(distal[finger]);
-            // Missing tracking returns a zero position and identity quaternion.
-            // Do not mistake that for a fully extended hand.
-            valid.Add(graph.Not(graph.Equal(graph.Continuous(near.Position), float3.Zero)));
-            valid.Add(graph.Not(graph.Equal(graph.Continuous(far.Position), float3.Zero)));
+            // Streamed native finger poses have zero/absent positions. Tracking
+            // validity is obtained separately from the native HandPoser bridge.
             if (finger == 0) curls[finger] = graph.Angle(graph.Continuous(near.Rotation), graph.Continuous(far.Rotation));
             else
             {
                 var middle = Pose(proximal[finger] + 1);
-                valid.Add(graph.Not(graph.Equal(graph.Continuous(middle.Position), float3.Zero)));
                 var nearRotation = graph.Continuous(near.Rotation);
                 var middleRotation = graph.Continuous(middle.Rotation);
                 var farRotation = graph.Continuous(far.Rotation);
@@ -78,8 +74,8 @@ internal static class ExpressionGestures
         INodeValueOutput<int> pose = graph.Constant(0);
         for (var i = conditions.Length - 1; i > 0; i--)
             pose = graph.Choose(conditions[i], graph.Constant(i), pose);
-        pose = graph.Choose(graph.All(valid.ToArray()), pose, graph.Constant(-1));
-        var output = host.AddSlot(side + " Gesture").AttachComponent<ValueField<int>>();
+        pose = graph.Choose(tracking, pose, graph.Constant(-1));
+        var output = host.AddSlot(side + " Tracked Gesture").AttachComponent<ValueField<int>>();
         graph.Drive(output.Value, pose);
         return graph.Read(output.Value);
     }
