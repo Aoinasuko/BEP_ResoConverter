@@ -27,7 +27,7 @@ foreach ($pattern in @('FrooxEngine*.dll', 'Elements*.dll', 'SkyFrost*.dll', 'Pr
 }
 Copy-Item -LiteralPath (Join-Path $nativeRoot 'THIRD-PARTY-LICENSE.md') -Destination $stagingRoot
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'THIRD-PARTY-NOTICES.md') -Destination $stagingRoot
-[IO.File]::WriteAllText((Join-Path $stagingRoot 'bep-features.json'), '{"facialExpressions":3,"avatarEyeLook":1}', [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText((Join-Path $stagingRoot 'bep-features.json'), '{"facialExpressions":3,"avatarEyeLook":1,"physBoneLimits":1}', [Text.UTF8Encoding]::new($false))
 $runtimePackage = Get-ChildItem -LiteralPath (Join-Path $env:USERPROFILE '.nuget\packages\microsoft.netcore.app.runtime.win-x64') -Directory | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
 foreach ($notice in @('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT')) {
     if ($runtimePackage -and (Test-Path -LiteralPath (Join-Path $runtimePackage.FullName $notice))) {

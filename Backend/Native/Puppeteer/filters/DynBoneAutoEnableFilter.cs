@@ -129,14 +129,15 @@ public class DynBoneAutoEnableFilter(TranslateContext context)
             group.Name = "DBGroup_" + guid;
 
             bool hasOtherComponents = false;
-            
+
+            // Limited chains simulate helper bones, while the mesh remains bound
+            // to the original skeleton. Use that skeleton for visibility gating.
             foreach (var bone in db.Bones)
             {
                 var slot = bone.BoneSlot.Target;
-                if (slot != null)
-                {
-                    boneSlotToEnableVar[slot] = group;
-                }
+                if (slot == null) continue;
+                if (context.PhysicsProxySources.TryGetValue(slot, out var renderedBone)) slot = renderedBone;
+                boneSlotToEnableVar[slot] = group;
 
                 foreach (var component in slot.GetComponentsInChildren<F.IComponent>())
                 {

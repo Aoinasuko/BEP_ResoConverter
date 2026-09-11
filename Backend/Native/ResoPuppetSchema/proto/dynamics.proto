@@ -12,6 +12,13 @@ enum ColliderType {
   PLANE = 2;
 }
 
+enum DynamicBoneLimitType {
+  DYNAMIC_BONE_LIMIT_TYPE_NONE = 0;
+  DYNAMIC_BONE_LIMIT_TYPE_ANGLE = 1;
+  DYNAMIC_BONE_LIMIT_TYPE_HINGE = 2;
+  DYNAMIC_BONE_LIMIT_TYPE_POLAR = 3;
+}
+
 message DynamicCollider {
   ObjectID target_transform = 1;
   ColliderType type = 2;
@@ -35,6 +42,9 @@ message DynamicBone {
   optional float vrc_gravity = 23;
   optional float vrc_immobile = 24;
   bool vrc_parameters = 25;
+  DynamicBoneLimitType limit_type = 26;
+  // VRC branch direction policy: Ignore, First, or Average.
+  string multi_child_type = 27;
 }
 
 message DynamicBoneNode {
@@ -45,4 +55,9 @@ message DynamicBoneNode {
   optional float stiffness = 5;
   optional float gravity = 6;
   optional float immobile = 7;
+  // Degrees, sampled using VRC's simulated-bone ratio (excluding the final tip).
+  optional float max_angle_x = 8;
+  optional float max_angle_z = 9;
+  // Local offset of the limit frame, using VRC's Euler XYZ order.
+  Quaternion limit_rotation = 10;
 }

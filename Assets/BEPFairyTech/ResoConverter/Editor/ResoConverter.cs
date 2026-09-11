@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.3.1";
+        public const string Version = "0.3.2";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }
@@ -34,6 +34,12 @@ namespace BEPFairyTech.ResoConverter
             if (EditorApplication.isPlayingOrWillChangePlaymode) problems.Add("Play Modeを終了してから変換してください。");
             if (float.IsNaN(options.ToonShadowStrength) || float.IsInfinity(options.ToonShadowStrength) || options.ToonShadowStrength < 0 || options.ToonShadowStrength > 1)
                 problems.Add("トゥーン影の濃さは0～1で指定してください。");
+            if (!(options.Kind == ExportKind.Model && options.FreezePose) &&
+                source.GetComponentsInChildren<Component>(true).Any(c => c != null &&
+                    c.GetType().FullName == "VRC.SDK3.Dynamics.PhysBone.Components.VRCPhysBone" &&
+                    OptionalComponent.Get(c, "limitType")?.ToString() is string limit && limit != "None") &&
+                !BackendRunner.SupportsPhysBoneLimits())
+                problems.Add("PhysBoneの角度制限に対応した変換エンジンがありません。ResoConverter v0.3.2以降を、変換エンジンも含めてインポートしてください。");
             if (!source.GetComponentsInChildren<Renderer>(true).Any(r =>
                 (r is SkinnedMeshRenderer skin && skin.sharedMesh != null && skin.sharedMesh.vertexCount > 0) ||
                 (r is MeshRenderer && r.GetComponent<MeshFilter>()?.sharedMesh != null && r.GetComponent<MeshFilter>().sharedMesh.vertexCount > 0)))

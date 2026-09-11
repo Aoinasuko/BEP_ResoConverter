@@ -33,6 +33,7 @@ internal static class NativeVerification
                 ? null : await ItemGrabVerification.Inspect(world, container, visibleRenderers);
             var expressions = await ExpressionVerification.Verify(world, container);
             var eyeLook = await EyeLookVerification.Verify(world, container);
+            var physBoneLimits = await PhysBoneLimitVerification.Inspect(world, container);
             var blinkTargets = new List<string>();
             foreach (var driver in container.GetComponentsInChildren<ValueDriver<float>>().Where(d => d.Slot.Name == "BEP Selected Blink"))
             {
@@ -68,6 +69,7 @@ internal static class NativeVerification
                 itemGrab = itemGrab?.Details,
                 expressions,
                 eyeLook,
+                physBoneLimits,
             };
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await new ToBackground();

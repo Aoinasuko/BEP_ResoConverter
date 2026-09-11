@@ -12,7 +12,7 @@ ResoniteのエンジンDLLを同梱せず、指定されたインストール先
 
 ## 使い方
 
-1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.3.0.unitypackage` を取得してインポートします。配置先は `Assets/BEPFairyTech/ResoConverter` です。
+1. 配布された `BEP_ResoConverter-v0.3.2.unitypackage` をインポートします。公開済みの版は [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases) から取得できます。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 2. `BEP Fairy Tech → ResoConverter` を開きます。
 3. Hierarchy上の対象ルートを「変換対象」に指定します。Project内のPrefabアセットは対象にできません。
 4. 「アバター」または「3Dモデル・アイテム」を選びます。
@@ -30,7 +30,9 @@ v0.1.2では文字列を読み取る貼り付け経路に対応するため、�
 
 ## 以前の版からの更新
 
-旧版で作成した `.resonitepackage` は引き続き使えます。v0.3.0のコントローラー操作による手形切り替えや、ハンドサインが反応しない場合の修正を適用するには、v0.3.0をインポートし、元のUnityシーンから再変換してください。旧出力をコピーし直すだけでは、新機能や修正は反映されません。
+v0.3.2ではPhysBoneの角度制限と、別PhysBone配下の除外を反映します。適用するには更新したツールで元のUnityシーンから再変換し、新しい `.resonitepackage` を取り込んでください。Resonite側への追加MODの導入は不要です。古い出力をコピーし直すだけでは、角度制限は追加されません。
+
+旧版で作成した `.resonitepackage` は引き続き使えます。v0.3.0のコントローラー操作による手形切り替えや、ハンドサインが反応しない場合の修正を適用するには、v0.3.0以降をインポートし、元のUnityシーンから再変換してください。旧出力をコピーし直すだけでは、新機能や修正は反映されません。
 
 v0.3.0では、指の追跡が有効でも位置情報が0になる入力を、未追跡と誤って判定する問題に対応します。表情用AnimationClipから指定時刻のBlendShape静止値を移す方式は従来どおりです。
 
@@ -54,6 +56,27 @@ v0.1で出力したアイテムを掴めない場合は、最新の `.unitypacka
 | 現在のポーズと表情で固定 | SkinnedMeshRendererを現在の変形結果でベイクし、静的メッシュに変換。揺れ物は停止 |
 | Modular Avatarを反映 | 導入済みなら一時コピーで前処理し、Bone ProxyやMerge Armatureの配置・追従を反映 |
 
+## PhysBoneの角度制限
+
+v0.3.2では、VRC PhysBoneに設定された次の角度制限をResoniteの標準コンポーネントで構成します。ツール側で制限を入力し直す必要はありません。元のPhysBone設定を読み取るにはVRChat SDKが必要ですが、SDKを入れていないUnityプロジェクトでもツール自体は使用できます。
+
+| VRCの設定 | 変換後の動作 |
+| --- | --- |
+| None | 角度制限を付けない |
+| Angle | 元の軸からの傾きを `Max Angle` の範囲に制限 |
+| Hinge | 指定した軸の平面内で、設定角度の範囲に制限 |
+| Polar | `Max Angle X`／`Max Angle Z` のそれぞれの範囲に制限 |
+| Limit Rotation | 制限軸の向きを反映。XYZ各軸のカーブもボーンごとに適用 |
+| 角度カーブ | ボーンごとに角度をサンプリングし、根元と先端で異なる制限を反映 |
+| Ignore Other PhysBones | 別PhysBoneのRoot以下を対象から除外し、同じ骨への重複適用を防止 |
+| Multi Child Type | Firstは最初の子の方向、Averageは子の平均方向を使う。Ignoreは分岐点自体を揺らさず、配下の対象ボーンを処理 |
+
+VRCの `Endpoint Position` は反映しますが、Unityにない末端をResoniteがさらに自動延長する処理は停止します。別PhysBoneを除外した結果などで対象が1ボーンだけになり、`Endpoint Position` も0の場合、そのチェーンには揺れを発生させません。親のアニメーションや追従による移動は引き続き反映されます。
+
+角度制限は**表示ボーン**へ適用します。衝突・つかみの計算は制限前の物理ボーンを使うため、限界角度付近で見た目と計算位置がずれる場合があります。また、ボーン階層に各軸で異なるスケールや負のスケールがある場合、ワールド空間での角度は近似になります。VRChatの揺れ方や衝突処理全体の完全再現は行いません。関連する警告は `.report.json` に記録します。
+
+**変換対象のルートそのものを、角度制限付きPhysBoneのRootにした構成は出力できません。** この場合は理由を表示して変換を停止します。アバターやモデルのルート配下にある子ボーンをPhysBoneのRootに指定してください。Rootが未指定の場合は、そのPhysBoneコンポーネントを付けたオブジェクトがRootになります。
+
 ## 目の動きと影の濃さ
 
 v0.3.1では、VRC Avatar DescriptorのEye Lookに保存された正面・上・下・左・右のボーン回転を変換します。上下を動かさない設定や小さい左右の可動範囲も保持します。視線の反応速度・注視先選択はResoniteの仕組みを使うため、VRChatの視線処理と完全に同じではありません。VRC側でEye Lookが無効なら目の自動回転を停止し、SDKがない場合はResonite標準の設定を使います。
@@ -62,7 +85,7 @@ v0.3.1では、VRC Avatar DescriptorのEye Lookに保存された正面・上・
 
 VRChat Mobile Toon StandardはPBRではなくトゥーン材質へ変換します。通常瞬きと目閉じ表情が同じ顔の頂点を動かす場合は、表情の間だけ選択した通常瞬きを抑えます。単一の両目用瞬きShapeを選んだ場合、片目の表情との干渉でもそのShape全体を抑えます。
 
-これらの修正は **v0.3.1で再変換した出力** に適用されます。以前の出力をコピーし直しても更新されません。
+これらの修正は **v0.3.1以降で再変換した出力** に適用されます。以前の出力をコピーし直しても更新されません。
 
 ## ハンドサイン・メニュー表情
 
@@ -124,7 +147,7 @@ Resoniteエンジン内でコントローラー入力と手形生成を検証し
 
 - PhysBoneはResoniteのDynamicBoneChainへ近似変換します。Pull、Spring、Stiffness、Gravity、Immobileの基本値を、チェーン全体の弾性・減衰・硬さ・重力・慣性へ換算します。VRCとResoniteは別の物理計算を使うため、同じ揺れ加減を再現するものではなく、取り込み後の調整が必要になる場合があります。
 - PhysBoneの対象ボーン、除外ボーン、末端オフセット、半径と半径カーブを反映します。Pullなどのボーンごとのカーブはサンプリング値をパッケージ内の参照情報へ記録しますが、Resoniteの各ボーンの物理係数としては適用しません。元のUnityシリアライズ値も `.report.json` に記録します。
-- PhysBoneの角度制限、Gravity Falloff、Stretch / Squish、計算モード、Animatorやパラメーターによる動作変更は再現しません。球コライダーを移し、カプセルは複数の球で近似します。平面・内側拘束・半径0のコライダーは省略して警告します。VRCの相手別の衝突・つかみ許可やCollision Tagsも同じ意味では移植されません。
+- PhysBoneのAngle／Hinge／Polarは上記の方式で表示ボーンへ適用します。Gravity Falloff、Stretch / Squish、計算モード、Animatorやパラメーターによる動作変更は再現しません。球コライダーを移し、カプセルは複数の球で近似します。平面・内側拘束・半径0のコライダーは省略して警告します。VRCの相手別の衝突・つかみ許可やCollision Tagsも同じ意味では移植されません。
 - lilToonはResoniteのXiexeToon材質へ変換します。色、テクスチャ、透過、法線、発光、影、輪郭など対応する要素を移し、一部はテクスチャへ焼き込みます。独自シェーダーコードや全特殊効果は移せません。
 - Modular Avatar導入時はNDMFの前処理を一時コピーへ適用し、Bone ProxyやMerge Armatureによる配置・統合の結果を通常のボーン階層・メッシュとして出力します。両コンポーネントの追従と元シーンを変更しないことをテストしています。NDMFが利用できない場合の代替処理は、Bone ProxyとMerge Armatureの基本的な追従だけに限定し、未適用のMAコンポーネントを警告します。
 - 既存のVRChat / Modular AvatarのExpression MenuやAnimatorの操作ロジック、VRChatのContacts、独自スクリプトはResonite用ロジックへ自動変換しません。新しい表情機能では、このツールに登録したクリップの静止値から独立した操作を作ります。VRC Constraintは書き出し時点のTransformを出力し、Resonite上で制約による追従を再計算しません。静的な小物にする場合は「現在のポーズと表情で固定」を使用してください。

@@ -16,12 +16,19 @@ namespace BEPFairyTech.ResoConverter
         internal const string AssetRoot = "Assets/BEPFairyTech/ResoConverter";
 
         [Serializable]
-        private sealed class BackendFeatures { public int facialExpressions; public int avatarEyeLook; }
+        private sealed class BackendFeatures { public int facialExpressions; public int avatarEyeLook; public int physBoneLimits; }
         private static string featurePayload;
         private static DateTime featureTimestamp;
         private static long featureLength;
         private static bool supportsExpressions;
         private static bool supportsEyeLook;
+        private static bool supportsPhysBoneLimits;
+
+        internal static bool SupportsPhysBoneLimits()
+        {
+            SupportsFacialExpressions();
+            return supportsPhysBoneLimits;
+        }
 
         internal static bool SupportsAvatarEyeLook()
         {
@@ -33,7 +40,12 @@ namespace BEPFairyTech.ResoConverter
         {
             string payload = Path.Combine(Directory.GetParent(Application.dataPath).FullName, AssetRoot, "Editor/BackendPayload.bytes");
             var file = new FileInfo(payload);
-            if (!file.Exists) { supportsEyeLook = false; return false; }
+            if (!file.Exists)
+            {
+                featurePayload = null;
+                supportsExpressions = supportsEyeLook = supportsPhysBoneLimits = false;
+                return false;
+            }
             if (featurePayload == payload && featureTimestamp == file.LastWriteTimeUtc && featureLength == file.Length)
                 return supportsExpressions;
             featurePayload = payload;
@@ -41,6 +53,7 @@ namespace BEPFairyTech.ResoConverter
             featureLength = file.Length;
             supportsExpressions = false;
             supportsEyeLook = false;
+            supportsPhysBoneLimits = false;
             try
             {
                 using (var archive = ZipFile.OpenRead(payload))
@@ -52,6 +65,7 @@ namespace BEPFairyTech.ResoConverter
                         var features = JsonUtility.FromJson<BackendFeatures>(reader.ReadToEnd());
                         supportsExpressions = features?.facialExpressions >= 3;
                         supportsEyeLook = features?.avatarEyeLook >= 1;
+                        supportsPhysBoneLimits = features?.physBoneLimits >= 1;
                     }
                 }
             }

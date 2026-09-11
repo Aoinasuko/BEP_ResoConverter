@@ -89,15 +89,28 @@ public partial class RootConverter
         {
             var base_radius = bone.Bones.Select(b => b.Radius).Max();
             
-            foreach ((var slot, var radius) in bone.Bones
-                         .Select(b => (Object<f.Slot>(b.Bone), b.Radius))
-                         .Where(b => b.Item1 != null)
-                         .OrderBy(kv => BonePath(kv.Item1))
-                    )
+            var resolved = bone.Bones.Select(b => (Slot: Object<f.Slot>(b.Bone), Spec: b))
+                .Where(b => b.Slot != null).Select(b => (Slot: b.Slot!, b.Spec))
+                .OrderBy(b => BonePath(b.Slot)).ToArray();
+            var rootSlot = Object<f.Slot>(bone.RootTransform) ?? parent;
+            if (bone.VrcParameters && (int)bone.LimitType != 0 && rootSlot == _root)
+                throw new InvalidOperationException("PhysBoneのRoot Transformを変換対象ルートの子ボーンに設定してください。" +
+                    "変換対象ルート自体の角度制限には対応していません。");
+            var limited = bone.VrcParameters && (int)bone.LimitType != 0
+                ? BepPhysBoneLimits.Setup(db, rootSlot, resolved, (int)bone.LimitType, bone.MultiChildType) : null;
+            if (limited != null)
+                foreach (var (original, proxy) in limited)
+                    _context.PhysicsProxySources[proxy] = original;
+            var radii = resolved.ToDictionary(b => b.Slot, b => b.Spec.Radius);
+            // Include omitted branching ancestors in the simulation topology.
+            // Otherwise DynamicBoneChain attaches disconnected branches to its
+            // first listed node. Helpers never drive the rendered skeleton.
+            var simulated = limited != null ? limited.Keys.OrderBy(BonePath) : resolved.Select(b => b.Slot);
+            foreach (var slot in simulated)
             {
                 var entry = db.Bones.Add();
-                entry.Assign(slot!);
-                entry.RadiusModifier.Value = base_radius > 0 ? radius / base_radius : 1;
+                entry.Assign(limited?.GetValueOrDefault(slot) ?? slot);
+                entry.RadiusModifier.Value = base_radius > 0 ? radii.GetValueOrDefault(slot) / base_radius : 0;
             }
 
             db.BaseBoneRadius.Value = base_radius;
@@ -109,13 +122,13 @@ public partial class RootConverter
                 )
             );
         
-            var rootSlot = Object<f.Slot>(bone.RootTransform) ?? parent;
             var templateName = bone.HasTemplateName && !string.IsNullOrWhiteSpace(bone.TemplateName) 
                 ? bone.TemplateName 
                 : GuessTemplateName(rootSlot, parent);
             
             if (bone.VrcParameters)
             {
+                db.SimulateTerminalBones.Value = false;
                 // PhysBone and DynamicBoneChain are different solvers. This mapping retains the
                 // relative amount of pull, oscillation, stiffness, gravity and world inertia.
                 // Preserve the original values and sampled per-bone curves in the package too.

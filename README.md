@@ -16,7 +16,7 @@ VRChat SDK、Modular Avatar、NDMF、lilToonは任意です。未導入でもツ
 
 ## インストールと使い方
 
-1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.3.1.unitypackage` をダウンロードします。
+1. 配布された `.unitypackage` を用意します。公開済みの版は [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases) から取得できます。v0.3.2の配布ファイル名は `BEP_ResoConverter-v0.3.2.unitypackage` です。
 2. 対象のUnityプロジェクトで `Assets → Import Package → Custom Package…` を選び、パッケージをインポートします。
 3. `BEP Fairy Tech → ResoConverter` を開きます。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 4. Hierarchy上の対象ルートを指定し、「アバター」または「3Dモデル・アイテム」を選びます。
@@ -33,13 +33,15 @@ v0.1.2では、文字列を読み取る貼り付け経路に対応するため�
 
 v0.3.1の目の可動範囲・表情と瞬きの競合修正・影の軽減は、元のUnityシーンから再変換すると反映されます。旧版の出力ファイルは引き続き使えますが、v0.3.0のコントローラー操作による手形切り替えと、ハンドサインが反応しない場合の修正を反映するには、元のUnityシーンから再変換してください。v0.1で出力したアイテムを掴めない場合も再変換が必要です。古いファイルは、コピーし直すだけでは更新されません。
 
+v0.3.2のPhysBone角度制限と対象ボーンの修正も、更新したツールで元のUnityシーンから再変換すると反映されます。取り込み先のResoniteに追加MODは不要です。
+
 ## 主な機能
 
 | 機能 | 内容 |
 | --- | --- |
 | アバター／アイテム出力 | Humanoidアバターとしての出力と、3Dモデルとしての出力を選択 |
 | 保存制限 | 初期値ON。ResoniteのSimpleAvatarProtectionを付与し、チェックを外すと付与しない |
-| 揺れ物 | VRC PhysBoneの基本値、対象ボーン、半径カーブ、対応コライダーを近似変換 |
+| 揺れ物 | VRC PhysBoneの基本値、対象ボーン、半径カーブ、対応コライダーを近似変換。Angle／Hinge／Polarの角度・軸・カーブを表示ボーンへ反映 |
 | Modular Avatar | Bone Proxy・Merge Armatureなどの前処理結果を配置・ボーン階層・メッシュへ反映 |
 | lilToon | 色・テクスチャ・透過・法線・発光・影・輪郭・リムライトを対応する材質設定へ変換 |
 | 視線 | VRCの正面・上下左右の眼ボーン姿勢を移植し、設定された範囲で目を動かす |
@@ -53,6 +55,14 @@ v0.3.1の目の可動範囲・表情と瞬きの競合修正・影の軽減は�
 | 成果物を文字列としてコピー | Windowsで最新の出力ファイルの絶対パスをUnicode文字列としてコピー |
 
 詳しい使い方と対応範囲は[日本語マニュアル](Assets/BEPFairyTech/ResoConverter/README-ja.md)を参照してください。
+
+## PhysBoneの角度制限
+
+v0.3.2では、VRC PhysBoneの `Angle`、`Hinge`、`Polar` と、角度・制限軸の回転カーブを移します。`ignoreOtherPhysBones` による別PhysBone配下の除外、分岐の `First`／`Average`／`Ignore` も反映します。Unityにない末端をResonite側で自動延長せず、子ボーンも末端オフセットもないチェーンには揺れを発生させません。
+
+制限は表示ボーンへ適用します。衝突・つかみの計算には制限前の物理ボーンを使うため、制限付近で見た目と計算位置がずれる場合があります。各軸の倍率が異なるスケールや負のスケールを含む階層では、ワールド空間での角度も近似になります。VRChatの物理挙動全体を再現する機能ではありません。
+
+変換対象のルートそのものを、角度制限付きPhysBoneのRootにする構成では変換を停止します。変換対象配下の子ボーンをPhysBoneのRootに指定してください。設定と制限の詳細は[日本語マニュアル](Assets/BEPFairyTech/ResoConverter/README-ja.md#physboneの角度制限)に記載しています。
 
 ## 表情の設定
 

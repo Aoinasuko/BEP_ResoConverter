@@ -21,6 +21,7 @@ public sealed class TranslateContext : IDisposable
     
     public Dictionary<p::AssetID, f.IWorldElement> Assets => _assets;
     public Dictionary<p::ObjectID, f.IWorldElement> Objects => _objects;
+    internal Dictionary<f.Slot, f.Slot> PhysicsProxySources { get; } = new();
     
     public f.Slot? Root { get; set; }
     public f.Slot? AssetRoot { get; set; }
