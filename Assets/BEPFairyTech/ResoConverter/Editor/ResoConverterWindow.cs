@@ -43,6 +43,8 @@ namespace BEPFairyTech.ResoConverter
             options.BlinkRenderer = null;
             options.BlinkShape = "";
             error = null;
+            presetMessage = null;
+            presetWarnings = Array.Empty<string>();
             if (source == null) return;
             foreach (var renderer in source.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -73,6 +75,7 @@ namespace BEPFairyTech.ResoConverter
                 var next = (GameObject)EditorGUILayout.ObjectField("変換対象（Hierarchy）", source, typeof(GameObject), true);
                 if (next != source) SetSource(next);
                 if (GUILayout.Button("Hierarchyで選択中のオブジェクトを使う")) SetSource(Selection.activeGameObject);
+                DrawPresets();
                 EditorGUILayout.Space(8);
                 options.Kind = (ExportKind)GUILayout.Toolbar((int)options.Kind, new[] { "アバター", "3Dモデル・アイテム" });
                 EditorGUILayout.Space(8);

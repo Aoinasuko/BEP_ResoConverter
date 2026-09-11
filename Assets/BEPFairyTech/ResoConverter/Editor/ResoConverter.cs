@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.3.3";
+        public const string Version = "0.3.4";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }

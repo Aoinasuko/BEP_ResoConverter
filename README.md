@@ -16,7 +16,7 @@ VRChat SDK、Modular Avatar、NDMF、lilToonは任意です。未導入でもツ
 
 ## インストールと使い方
 
-1. 配布された `.unitypackage` を用意します。公開済みの版は [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases) から取得できます。v0.3.3の配布ファイル名は `BEP_ResoConverter-v0.3.3.unitypackage` です。
+1. 配布された `.unitypackage` を用意します。公開済みの版は [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases) から取得できます。v0.3.4の配布ファイル名は `BEP_ResoConverter-v0.3.4.unitypackage` です。
 2. 対象のUnityプロジェクトで `Assets → Import Package → Custom Package…` を選び、パッケージをインポートします。
 3. `BEP Fairy Tech → ResoConverter` を開きます。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 4. Hierarchy上の対象ルートを指定し、「アバター」または「3Dモデル・アイテム」を選びます。
@@ -41,6 +41,7 @@ v0.3.3では、PCの移動・ジャンプで表情が変わる問題を抑制し
 
 | 機能 | 内容 |
 | --- | --- |
+| 出力設定プリセット | 表情の割り当て・瞬き・サイズなどをUnityアセットに保存し、選択したシーン上の対象へ復元 |
 | アバター／アイテム出力 | Humanoidアバターとしての出力と、3Dモデルとしての出力を選択 |
 | 保存制限 | 初期値ON。ResoniteのSimpleAvatarProtectionを付与し、チェックを外すと付与しない |
 | 揺れ物 | VRC PhysBoneの基本値、対象ボーン、半径カーブ、対応コライダーを近似変換。Angle／Hinge／Polarの角度・軸・カーブを表示ボーンへ反映 |
@@ -65,6 +66,16 @@ v0.3.2では、VRC PhysBoneの `Angle`、`Hinge`、`Polar` と、角度・制限
 制限は表示ボーンへ適用します。衝突・つかみの計算には制限前の物理ボーンを使うため、制限付近で見た目と計算位置がずれる場合があります。各軸の倍率が異なるスケールや負のスケールを含む階層では、ワールド空間での角度も近似になります。VRChatの物理挙動全体を再現する機能ではありません。
 
 変換対象のルートそのものを、角度制限付きPhysBoneのRootにする構成では変換を停止します。変換対象配下の子ボーンをPhysBoneのRootに指定してください。設定と制限の詳細は[日本語マニュアル](Assets/BEPFairyTech/ResoConverter/README-ja.md#physboneの角度制限)に記載しています。
+
+## 出力設定のプリセット
+
+変換対象を指定して設定を済ませたら、ウィンドウ上部の「出力設定プリセット」で **新規保存…** を押します。次回は対象を指定し、保存したアセットを「プリセット」に入れて **復元** を押すだけで設定を戻せます。変更を同じプリセットへ保存するには **上書き保存** を使います。復元はUnityのUndoで戻せます。
+
+ハンドサインの左右条件・表情クリップ・サンプル時刻・行順、メニューの名称・クリップ・時刻、各機能のON/OFF、瞬き、サイズ、保存制限、影の濃さ、Modular Avatarの反映、出力種別とポーズ固定を保存します。変換対象自体・成果物のパス・PC固有のResonite本体の場所は保存しません。
+
+保存先の初期値は `Assets/BEPFairyTech/ResoConverterPresets` です。ツール本体とは別のフォルダーなので、ツールの配布パッケージには含まれません。アセットはUnityの再起動後も残ります。瞬き用メッシュはアバター内の相対階層で記録するため、同じ構造の別の配置にも復元できます。見つからないメッシュ・BlendShape・クリップは通知し、同名の階層などで参照が曖昧なら復元を停止します。
+
+AnimationClipはアセットへの参照として保存します。別プロジェクトへ移す場合は、使用するクリップやFBXなどの参照元も一緒に移してください。クリップ未設定の行も保持するため、途中の設定を保存できます。詳しくは[日本語マニュアル](Assets/BEPFairyTech/ResoConverter/README-ja.md#出力設定プリセット)を参照してください。
 
 ## 表情の設定
 

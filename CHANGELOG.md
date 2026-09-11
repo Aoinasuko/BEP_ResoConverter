@@ -1,5 +1,12 @@
 # 変更履歴
 
+## [v0.3.4](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.4) — 2026-09-12
+
+- 出力設定プリセットの新規保存・上書き保存・復元を追加。表情の左右条件・クリップ・時刻・表示名・行順、瞬き、サイズ、影の濃さなどをUnityアセットとして保持。
+- 瞬き用メッシュは対象ルートからの相対階層で記録し、同じ構造の別の配置にも復元。欠落参照は通知し、曖昧な参照は現在の設定を変更せず停止。
+- 復元はUndoに対応。Resonite本体の場所は現在のPCの設定を維持し、シーン参照や成果物のパスはプリセットへ保存しない。
+- 初期保存先を `Assets/BEPFairyTech/ResoConverterPresets` とし、ツール本体の配布対象から分離。任意のVRChat SDK・Modular Avatar・lilToonへの依存は追加しない。
+
 ## [v0.3.3](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.3) — 2026-09-12
 
 - PCでジャンプ・ダッシュなどに伴う指の姿勢変化がハンドサイン表情へ反映される問題を修正。PCではShift＋数字キーを操作している間だけハンドサインを使用。

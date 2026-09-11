@@ -6,6 +6,9 @@
 # Local API inspection and ad-hoc export fixtures
 /Backend/Inspect/
 /Backend/Smoke/
+# Personal output presets, stored separately from the distributable tool
+/Assets/BEPFairyTech/ResoConverterPresets/
+/Assets/BEPFairyTech/ResoConverterPresets.meta
 
 # Release packages are uploaded to GitHub Releases, not stored in Git
 /Dist/
