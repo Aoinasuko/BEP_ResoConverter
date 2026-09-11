@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.3.2";
+        public const string Version = "0.3.3";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }
@@ -56,6 +56,8 @@ namespace BEPFairyTech.ResoConverter
                         problems.Add("瞬き用BlendShapeを選び直してください。");
                 }
                 problems.AddRange(ExpressionExporter.Validate(source, options));
+                if (options.EnableHandExpressions && !BackendRunner.SupportsDesktopHandGestures())
+                    problems.Add("PCのキー操作によるハンドサインに対応した変換エンジンがありません。ResoConverter v0.3.3以降を、変換エンジンも含めてインポートしてください。");
                 if (!BackendRunner.SupportsAvatarEyeLook() ||
                     ((options.EnableHandExpressions || options.EnableMenuExpressions) && !BackendRunner.SupportsFacialExpressions()))
                     problems.Add("目の動き・瞬きの修正に対応した変換エンジンがありません。ResoConverter v0.3.1以降のパッケージを、変換エンジンも含めてインポートしてください。");

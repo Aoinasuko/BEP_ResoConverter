@@ -16,13 +16,20 @@ namespace BEPFairyTech.ResoConverter
         internal const string AssetRoot = "Assets/BEPFairyTech/ResoConverter";
 
         [Serializable]
-        private sealed class BackendFeatures { public int facialExpressions; public int avatarEyeLook; public int physBoneLimits; }
+        private sealed class BackendFeatures { public int facialExpressions; public int avatarEyeLook; public int physBoneLimits; public int desktopHandGestures; }
         private static string featurePayload;
         private static DateTime featureTimestamp;
         private static long featureLength;
         private static bool supportsExpressions;
         private static bool supportsEyeLook;
         private static bool supportsPhysBoneLimits;
+        private static bool supportsDesktopHandGestures;
+
+        internal static bool SupportsDesktopHandGestures()
+        {
+            SupportsFacialExpressions();
+            return supportsDesktopHandGestures;
+        }
 
         internal static bool SupportsPhysBoneLimits()
         {
@@ -43,7 +50,7 @@ namespace BEPFairyTech.ResoConverter
             if (!file.Exists)
             {
                 featurePayload = null;
-                supportsExpressions = supportsEyeLook = supportsPhysBoneLimits = false;
+                supportsExpressions = supportsEyeLook = supportsPhysBoneLimits = supportsDesktopHandGestures = false;
                 return false;
             }
             if (featurePayload == payload && featureTimestamp == file.LastWriteTimeUtc && featureLength == file.Length)
@@ -54,6 +61,7 @@ namespace BEPFairyTech.ResoConverter
             supportsExpressions = false;
             supportsEyeLook = false;
             supportsPhysBoneLimits = false;
+            supportsDesktopHandGestures = false;
             try
             {
                 using (var archive = ZipFile.OpenRead(payload))
@@ -66,6 +74,7 @@ namespace BEPFairyTech.ResoConverter
                         supportsExpressions = features?.facialExpressions >= 3;
                         supportsEyeLook = features?.avatarEyeLook >= 1;
                         supportsPhysBoneLimits = features?.physBoneLimits >= 1;
+                        supportsDesktopHandGestures = features?.desktopHandGestures >= 1;
                     }
                 }
             }

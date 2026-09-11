@@ -34,6 +34,7 @@ internal static class ExpressionVerification
         // A headless world with one user normally pauses ordinary component
         // updates. Enable real updates only for this isolated verification.
         world.ForceFullUpdateCycle = true;
+        using var inputMode = new ExpressionInputVerificationScope(world);
         try
         {
             async Task Settle() { for (var i = 0; i < 20; i++) await new NextUpdate(); }
@@ -136,7 +137,7 @@ internal static class ExpressionVerification
                     Pose(Chirality.Right, right);
                     Press(-1); await Settle();
                     if (leftOutput.Value != left || rightOutput.Value != right)
-                        throw new InvalidOperationException($"Finger pose classifier expected ({left},{right}), got ({leftOutput.Value},{rightOutput.Value}); curls: "
+                        throw new InvalidOperationException($"Finger pose classifier expected ({left},{right}), got ({leftOutput.Value},{rightOutput.Value}); device={world.LocalUser.HeadDevice}, vr={world.LocalUser.VR_Active}, tracking={host.FindChild("Left Finger Tracking Valid").GetComponent<ValueField<bool>>().Value.Value}/{host.FindChild("Right Finger Tracking Valid").GetComponent<ValueField<bool>>().Value.Value}; curls: "
                             + string.Join(", ", host.Children.Where(s => s.Name.Contains("Finger Curl")).Select(s => s.Name + "=" + s.GetComponent<ValueField<float>>().Value.Value)));
                     var index = hands.FindIndex(rule => (rule.left == "Any" || ExpressionGestures.Parse(rule.left) == left)
                         && (rule.right == "Any" || ExpressionGestures.Parse(rule.right) == right));
@@ -265,6 +266,7 @@ internal static class ExpressionVerification
                 throw new InvalidOperationException("Selecting an expression on a second avatar changes the first avatar.");
             checks.Add("second avatar selection leaves the first avatar independent");
             var controller = await ControllerExpressionVerification.Verify(world, copyHost, wearer, checks);
+            var desktop = await DesktopExpressionVerification.Verify(world, copyHost, wearer, checks);
             equipment.Dequip(null);
             copy.SetParent(scene);
             for (var frame = 0; frame < 20; frame++) await new NextUpdate();
@@ -273,7 +275,7 @@ internal static class ExpressionVerification
             checks.Add("actual avatar dequip clears wearer and removes menu registration");
             return new { verified = true, avatarRootSlot = avatar.Slot.Name, expressionParent = host.Parent.Name,
                 equipTraversalIncludesAssigner = assigner != null, wearerFingerSourceVerified = copyOwner != null,
-                menuRegisteredWithWearer = menu != null, independentCopy = true, controller };
+                menuRegisteredWithWearer = menu != null, independentCopy = true, controller, desktop };
         }
         finally
         {

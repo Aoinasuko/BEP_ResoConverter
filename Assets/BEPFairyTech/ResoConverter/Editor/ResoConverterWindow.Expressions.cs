@@ -23,10 +23,13 @@ namespace BEPFairyTech.ResoConverter
             if (options.EnableHandExpressions)
             {
                 options.UseControllerHandPoses = EditorGUILayout.ToggleLeft(
-                    "コントローラー操作で手の形も切り替える", options.UseControllerHandPoses);
+                    "VRのコントローラー操作で手の形も切り替える", options.UseControllerHandPoses);
                 EditorGUILayout.LabelField(options.UseControllerHandPoses
-                    ? "Oculus/Meta Touchはトリガー・グリップ・親指の接触で手の形を切り替えます。Viveなど、ほかのコントローラーは現在の指の姿勢から判定します。"
-                    : "現在の指の姿勢からハンドサインを判定します。", EditorStyles.wordWrappedMiniLabel);
+                    ? "VRではOculus/Meta Touchのトリガー・グリップ・親指の接触で手の形を切り替えます。Viveなど、ほかのコントローラーは現在の指の姿勢から判定します。"
+                    : "VRでは現在の指の姿勢からハンドサインを判定します。", EditorStyles.wordWrappedMiniLabel);
+                EditorGUILayout.HelpBox("PC操作：左Shift＋数字1～8で左手、右Shift＋数字1～8で右手を切り替えます（キーボード上段）。押している間だけ有効で、離すと解除します。移動やジャンプによる手の動きでは表情を切り替えません。", MessageType.Info);
+                EditorGUILayout.LabelField("1 自然な手 ／ 2 握り ／ 3 開き ／ 4 指差し\n5 ピース ／ 6 ロック ／ 7 指鉄砲 ／ 8 サムズアップ", EditorStyles.wordWrappedMiniLabel);
+                EditorGUILayout.LabelField("PCでキー操作していない側の手は、表情の条件判定ではIdleとして扱います。メニューで固定した表情を優先します。", EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.LabelField("左手・右手の両方の条件で判定します。複数の条件に一致すると、上の行を優先します。", EditorStyles.wordWrappedMiniLabel);
                 for (int i = 0; i < options.HandExpressions.Count; i++)
                 {

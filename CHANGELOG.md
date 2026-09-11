@@ -1,5 +1,12 @@
 # 変更履歴
 
+## [v0.3.3](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.3) — 2026-09-12
+
+- PCでジャンプ・ダッシュなどに伴う指の姿勢変化がハンドサイン表情へ反映される問題を修正。PCではShift＋数字キーを操作している間だけハンドサインを使用。
+- 左Shift＋数字1～8で左手、右Shift＋数字1～8で右手を切り替え、キーを離すと解除。1から順にIdle／Fist／Open／Point／Victory／RockNRoll／HandGun／ThumbsUp。
+- VRでは従来のTouch・指追跡による表情切り替えを維持。PC操作はVRコントローラーのチェックをOFFにしても使用可能。メニューによる表情固定を優先。
+- PCキー操作に非対応の旧変換エンジンを検出する互換性チェックを追加。修正の反映には元のUnityシーンから再変換が必要。
+
 ## [v0.3.2](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.2) — 2026-09-12
 
 - PhysBoneのAngle／Hinge／Polarを表示ボーンへ適用。角度と制限軸のXYZ回転カーブをボーンごとに読み取り、VRCと同じ角度カーブの位置・回転順で変換。

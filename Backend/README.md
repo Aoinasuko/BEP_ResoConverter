@@ -54,6 +54,8 @@ The user-facing labels and setup procedure are documented in the [Japanese manua
 
 ## Controller hand poses in v0.3.0
 
+As of v0.3.3, the controller and tracked-pose classifiers are only used in VR. Desktop hand expressions use the dedicated keyboard path described below, including when `UseControllerHandPoses` is disabled. The option is now shown as `VRのコントローラー操作で手の形も切り替える`.
+
 The new option `UseControllerHandPoses`, shown as `コントローラー操作で手の形も切り替える`, defaults to true beneath the opt-in hand-expression setting. For SteamVR Oculus/Meta Touch, it distinguishes trigger contact from trigger pull and combines these with grip and thumb contact to select the eight gesture states. Thumb input uses joystick and face-button touch, with button presses and joystick clicks as fallbacks. ThumbRest touch is excluded, matching VRChat's SteamVR default Touch bindings. The result is a VRChat-like control scheme; it does not import the user's VRChat bindings. The seven named pose cases follow the [official Touch chart](https://docs.vrchat.com/docs/touch); other combinations use Idle.
 
 When the controller path is active for the local wearer, it also supplies standard native poses for the visible fingers. The original hand-pose source takes precedence while that hand holds a Grabbable or has a tool. Menu expression priority affects facial blendshapes only, so fixing a face does not freeze the controller-driven hand pose. Disabling the new option retains the original hand control and selects expressions through the finger-pose classifier.
@@ -63,6 +65,14 @@ Vive and other controllers use the finger-pose classifier and their original han
 The v0.3.0 tracking gate addresses a v0.2.0 failure with valid `FingerPoseStreamManager` input whose finger positions can be zero. A zero position alone is insufficient evidence of missing tracking; the gate must consider the source's tracking state. This is separate from the Continuous Relay work recorded for v0.2.0.
 
 Native roundtrip verification passed 88 expression checks, 25 raw Touch input cases, and 180 actual finger-bone rotation checks. Inputs were injected into native TouchControllerProxy ValueStreams, so these checks do not test a physical SteamVR device or another machine over the network. Controller-disabled and menu-only configurations also passed, and item output retained its ray/grab behavior without expression controls. Existing avatars require re-export from Unity to receive the new behavior. AnimationClip conversion remains limited to static blendshape samples.
+
+## Desktop hand poses in v0.3.3
+
+Desktop input uses Left Shift + Alpha1–Alpha8 for the left hand and Right Shift + Alpha1–Alpha8 for the right hand. Each chord is active only while both keys are held. The eight states are Idle, Fist, Open, Point, Victory, RockNRoll, HandGun and ThumbsUp. An unoperated hand is treated as Idle for rule matching, but no hand rule, including Any/Any, is selected unless at least one chord is active. Normal desktop locomotion and pose-stream changes cannot select expressions. Multiple number keys choose the lowest number; both Shift keys apply that same state to both hands.
+
+The keyboard path is generated whenever hand-expression rows are exported. It supplies poses only for operated hands, preserves the original pose while holding an item/tool, and retains menu expression priority. Released input returns expression targets to their live baseline unless the menu has fixed an expression. The `desktopHandGestures: 1` payload flag prevents a frontend from exporting this behavior with an older backend. Existing packages must be re-exported from Unity.
+
+Standard `KeyHeld` nodes suppress keyboard reads during text focus, Userspace focus and unfocused worlds. An `Update` node assigned to the wearer, with `SkipIfNull` enabled, writes the result into synchronized fields. Observers read those fields instead of evaluating their own keyboard for the avatar. The final selection also checks the wearer's known output device and current `VR_Active` state, so desktop pose streams cannot fall through to the VR classifier. Headset users can switch into desktop without changing their initially reported output device.
 
 ## Save policy
 

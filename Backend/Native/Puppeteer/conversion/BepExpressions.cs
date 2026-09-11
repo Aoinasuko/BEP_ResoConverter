@@ -44,6 +44,8 @@ public partial class RootConverter
             var sourceField = host.AddSlot("Wearer Finger Source").AttachComponent<ReferenceField<IFingerPoseSourceComponent>>();
             graph.DriveReference(sourceField.Reference, source);
             var sourceValue = graph.ReadObject<IFingerPoseSourceComponent>(sourceField.Reference);
+            var mode = ExpressionDesktop.BuildMode(graph, wearer);
+            var desktop = ExpressionDesktop.Build(graph, host, wearer, mode);
             var controllers = new Dictionary<Chirality, ControllerExpressionState>();
             INodeValueOutput<int> Hand(Chirality side)
             {
@@ -55,19 +57,29 @@ public partial class RootConverter
                     controllers[side] = controller;
                     gesture = graph.Choose(controller.Active, controller.Gesture, gesture);
                 }
+                var keyboard = desktop[side];
+                if (controllers.TryGetValue(side, out var vrController))
+                    controllers[side] = new ControllerExpressionState(
+                        graph.Choose(mode.VR, vrController.Gesture, keyboard.Gesture),
+                        graph.Any(graph.All(mode.VR, vrController.Active), keyboard.Active), keyboard.Holding);
+                else controllers[side] = keyboard;
+                gesture = graph.Choose(mode.VR, gesture,
+                    graph.Choose(mode.Desktop, graph.Choose(keyboard.Active, keyboard.Gesture, graph.Constant(0)), graph.Constant(-1)));
                 var output = host.AddSlot(side + " Gesture").AttachComponent<ValueField<int>>();
                 graph.Drive(output.Value, graph.Choose(graph.NotNull(wearer), gesture, graph.Constant(-1)));
                 return graph.Read(output.Value);
             }
             var left = Hand(Chirality.Left);
             var right = Hand(Chirality.Right);
-            if (settings.controllerGestures) ExpressionHandPoses.Build(_root, host, graph, wearer, controllers);
+            ExpressionHandPoses.Build(_root, host, graph, wearer, controllers);
+            var handsActive = graph.Any(mode.VR, graph.All(mode.Desktop,
+                graph.Any(desktop[Chirality.Left].Active, desktop[Chirality.Right].Active)));
             for (var i = handRules.Count - 1; i >= 0; i--)
             {
                 var rule = handRules[i];
                 var leftPose = ExpressionGestures.Parse(rule.left);
                 var rightPose = ExpressionGestures.Parse(rule.right);
-                var condition = graph.All(graph.Not(graph.Less(left, 0)), graph.Not(graph.Less(right, 0)),
+                var condition = graph.All(handsActive, graph.Not(graph.Less(left, 0)), graph.Not(graph.Less(right, 0)),
                     leftPose < 0 ? graph.Constant(true) : graph.Equal(left, leftPose),
                     rightPose < 0 ? graph.Constant(true) : graph.Equal(right, rightPose));
                 handSelection = graph.Choose(condition, graph.Constant(i), handSelection);

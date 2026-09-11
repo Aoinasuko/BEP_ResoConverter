@@ -48,6 +48,12 @@ internal static class ExpressionControllers
         var state = host.AddSlot(side + " Controller Gesture").AttachComponent<ValueField<int>>();
         graph.Drive(state.Value, gesture);
 
+        return new ControllerExpressionState(graph.Read(state.Value), active, BuildHolding(graph, host, wearer, side));
+    }
+
+    internal static INodeValueOutput<bool> BuildHolding(ExpressionGraph graph, Slot host,
+        INodeObjectOutput<User> wearer, Chirality side)
+    {
         var grabber = graph.Node<GetUserGrabber>(side + " Wearer grabber");
         grabber.User.Target = wearer;
         grabber.Node.Target = graph.Constant(BodyNode.LeftHand.GetSide(side));
@@ -60,6 +66,6 @@ internal static class ExpressionControllers
         var holding = graph.Any(graph.Not(graph.Less(graph.Continuous<int>(count), 1)), graph.Continuous<bool>(tool));
         var holdingField = host.AddSlot(side + " Holding Object Or Tool").AttachComponent<ValueField<bool>>();
         graph.Drive(holdingField.Value, holding);
-        return new ControllerExpressionState(graph.Read(state.Value), active, graph.Read(holdingField.Value));
+        return graph.Read(holdingField.Value);
     }
 }
