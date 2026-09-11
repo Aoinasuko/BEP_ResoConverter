@@ -10,6 +10,7 @@ public sealed class ConverterSettings
     public float standardHeight { get; set; } = 1.8f;
     public bool verifyAfterExport { get; set; }
     public JsonElement expressions { get; set; }
+    public JsonElement eyeLook { get; set; }
     public static ConverterSettings Read(string? path) => string.IsNullOrEmpty(path)
         ? new ConverterSettings()
         : JsonSerializer.Deserialize<ConverterSettings>(File.ReadAllText(path)) ?? new ConverterSettings();

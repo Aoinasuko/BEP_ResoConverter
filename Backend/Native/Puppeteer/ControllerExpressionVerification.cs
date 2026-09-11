@@ -42,6 +42,8 @@ internal static class ControllerExpressionVerification
                     var field = channels[i].GetComponent<ReferenceField<IField<float>>>().Reference.Target;
                     var fallback = channels[i].FindChild("Live Base").GetComponent<ValueField<float>>().Value.Value;
                     var expected = values.FirstOrDefault(v => v.target == i)?.value ?? fallback;
+                    if (channels[i].FindChild("Automatic Blink Channel") != null
+                        && ExpressionBlink.IsNeutralBlink(settings.targets[i].baseline, expected)) expected = fallback;
                     if (MathF.Abs(field.Value - expected) > .001f)
                         throw new InvalidOperationException($"Controller face {label} channel {i}: expected {expected}, got {field.Value}.");
                 }

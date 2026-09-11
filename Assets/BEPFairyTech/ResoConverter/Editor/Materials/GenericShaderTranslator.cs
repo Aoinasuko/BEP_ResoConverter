@@ -11,14 +11,16 @@ namespace BEPFairyTech.ResoConverter
     internal class GenericShaderTranslator : IShaderTranslator
     {
         protected readonly TextureAssetImporter textureImporter;
+        protected readonly float toonShadowStrength;
         protected readonly List<UnityEngine.Object> _tempObjects = new List<UnityEngine.Object>();
         private readonly Action<string>? warning;
         private readonly HashSet<string> emittedWarnings = new HashSet<string>();
 
-        public GenericShaderTranslator(TextureAssetImporter textureImporter, Action<string>? warning = null)
+        public GenericShaderTranslator(TextureAssetImporter textureImporter, Action<string>? warning = null, float toonShadowStrength = 0.5f)
         {
             this.textureImporter = textureImporter;
             this.warning = warning;
+            this.toonShadowStrength = float.IsNaN(toonShadowStrength) || float.IsInfinity(toonShadowStrength) ? 0.5f : Mathf.Clamp01(toonShadowStrength);
         }
 
         public void Dispose()
@@ -41,6 +43,11 @@ namespace BEPFairyTech.ResoConverter
             texture = reference = mat.GetTextureSafe(property);
             scale = mat.GetTextureScaleSafe(property);
             offset = mat.GetTextureOffsetSafe(property);
+            if (texture != null && IsMobileMultiply(mat.shader))
+            {
+                var baker = NewBakeMaterial(mat);
+                if (baker != null) texture = Bake(baker, texture, 5);
+            }
             return texture != null;
         }
 
@@ -127,10 +134,20 @@ namespace BEPFairyTech.ResoConverter
             protoMat.UnityRenderQueue = material.renderQueue;
             var shaderName = material.shader != null ? material.shader.name : "";
             protoMat.Category = shaderName.IndexOf("Unlit", StringComparison.OrdinalIgnoreCase) >= 0 ? p.MaterialCategory.Unlit : p.MaterialCategory.Pbr;
-            if (!(this is LiltoonShaderSupport) && shaderName != "Standard" && !shaderName.StartsWith("Unlit/", StringComparison.Ordinal) && !shaderName.StartsWith("Universal Render Pipeline/", StringComparison.Ordinal))
+            if (IsMobileMultiply(material.shader))
+            {
+                protoMat.Category = p.MaterialCategory.Unlit;
+                protoMat.BlendMode = p.BlendMode.Multiply;
+                protoMat.CullMode = p.CullMode.None;
+                protoMat.ZWrite = false;
+                Warn(material, "Mobile Multiply を非ライティングの乗算材質に変換しました。テクスチャの透明度は白との補間にベイクします。頂点カラーを使う場合は合成結果に差があります。");
+            }
+            else if (!(this is LiltoonShaderSupport) && !(this is VrchatMobileToonShaderSupport) && shaderName != "Standard" && !shaderName.StartsWith("Unlit/", StringComparison.Ordinal) && !shaderName.StartsWith("Universal Render Pipeline/", StringComparison.Ordinal))
                 Warn(material, "このシェーダーは基本プロパティから近似変換します。独自の描画効果は移植されません。");
             return true;
         }
+
+        internal static bool IsMobileMultiply(Shader? shader) => shader != null && shader.name == "VRChat/Mobile/Particles/Multiply";
 
         internal static p.BlendMode DetermineBlend(Material mat)
         {

@@ -11,8 +11,8 @@ namespace BEPFairyTech.ResoConverter
     // Detection and property access deliberately use strings: installing lilToon is optional.
     internal sealed class LiltoonShaderSupport : GenericShaderTranslator
     {
-        public LiltoonShaderSupport(TextureAssetImporter textureImporter, Action<string>? warning = null)
-            : base(textureImporter, warning) { }
+        public LiltoonShaderSupport(TextureAssetImporter textureImporter, Action<string>? warning = null, float toonShadowStrength = 0.5f)
+            : base(textureImporter, warning, toonShadowStrength) { }
 
         internal static bool IsLiltoonShader(Shader? shader) => shader != null &&
             (shader.name.IndexOf("lilToon", StringComparison.OrdinalIgnoreCase) >= 0 || shader.name.StartsWith("Hidden/lts", StringComparison.Ordinal));
@@ -199,6 +199,7 @@ namespace BEPFairyTech.ResoConverter
             {
                 var baker = new Material(mat) { shader = shader, hideFlags = HideFlags.HideAndDontSave };
                 _tempObjects.Add(baker);
+                baker.SetFloat("_ShadowStrength", (mat.GetFloatSafe("_ShadowStrength", 1) ?? 1) * toonShadowStrength);
                 ramp = Bake(baker, null, 0, false, 128, 16);
             }
             else

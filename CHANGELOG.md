@@ -1,5 +1,14 @@
 # 変更履歴
 
+## [v0.3.1](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.1) — 2026-09-11
+
+- VRC Eye Lookの方向別ボーン回転を保持。一律10度の視線制御で、狭い可動範囲のアバターの目玉が逸脱する問題を修正。頭部の移動・回転にも継続して追従。
+- 別BlendShapeによる目閉じ・ウィンクと通常瞬きが重なって顔が破綻する問題を修正。同じ頂点の変形を検出し、競合する表情の間だけ通常瞬きを抑制。
+- 選択瞬きShapeの初期値0・表情キー0を通常瞬きへ戻す扱いに変更。
+- トゥーン影の濃さを調整するスライダーを追加し、初期値を0.5に軽減。VRChat Mobile Toon Standardのトゥーン材質変換に対応。
+- VRChat Mobile MultiplyをUnlitの乗算材質として出力し、透明度を白との補間にベイク。PBRによる不要な暗化を修正。
+- 修正を反映するには元のUnityシーンから再変換が必要。
+
 ## [v0.3.0](https://github.com/Aoinasuko/BEP_ResoConverter/releases/tag/v0.3.0) — 2026-09-11
 
 ### 追加

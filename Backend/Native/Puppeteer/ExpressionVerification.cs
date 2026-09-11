@@ -43,6 +43,9 @@ internal static class ExpressionVerification
                 for (var i = 0; i < fields.Length; i++)
                 {
                     var expected = values.TryGetValue(i, out var value) ? value : live[i].Value;
+                    if (channels[i].FindChild("Automatic Blink Channel") != null
+                        && values.ContainsKey(i) && ExpressionBlink.IsNeutralBlink(settings.targets[i].baseline, value))
+                        expected = live[i].Value;
                     if (MathF.Abs(fields[i].Value - expected) > .0001f)
                         throw new InvalidOperationException($"Expression {label}: channel {i} expected {expected}, got {fields[i].Value}.");
                 }
@@ -64,6 +67,7 @@ internal static class ExpressionVerification
                     throw new InvalidOperationException("Unworn avatar unexpectedly activates a hand expression.");
                 CheckValues(null, "unworn avatar has no hand override, including Any rules");
             }
+            var blinkConflicts = await ExpressionBlinkVerification.Verify(world, container, host, settings);
             // Exercise the actual native blink ValueDriver through the proxy and
             // final mesh field, without replacing that driver's output link.
             foreach (var blink in container.GetComponentsInChildren<ValueDriver<float>>().Where(d => d.Slot.Name == "BEP Selected Blink"))
@@ -182,7 +186,7 @@ internal static class ExpressionVerification
                 throw new InvalidOperationException("Expression root menu or initial state is missing.");
             var wearerRegistration = await VerifyWearerRegistration(world, host, fields, checks);
             return new { verified = true, checks = checks.Count, handPosePairs = hands.Count > 0 ? 64 : 0,
-                menuItems = items, liveDriverProxies = redirected.Count, liveBlinkChecks, wearerRegistration };
+                menuItems = items, liveDriverProxies = redirected.Count, liveBlinkChecks, blinkConflicts, wearerRegistration };
         }
         finally
         {

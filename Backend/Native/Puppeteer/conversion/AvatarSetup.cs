@@ -300,6 +300,8 @@ public partial class RootConverter
 
         if (FREEZE_AVATAR) return;
 
+        SetupBepEyeLook(spec);
+
         // Setup visemes
         if (spec.VisemeConfig != null)
         {

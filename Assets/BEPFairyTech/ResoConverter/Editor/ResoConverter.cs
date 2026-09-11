@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.3.0";
+        public const string Version = "0.3.1";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }
@@ -32,6 +32,8 @@ namespace BEPFairyTech.ResoConverter
             else if (UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(source.scene))
                 problems.Add("Prefab編集モードやプレビューではなく、通常のシーンに配置したオブジェクトを指定してください。");
             if (EditorApplication.isPlayingOrWillChangePlaymode) problems.Add("Play Modeを終了してから変換してください。");
+            if (float.IsNaN(options.ToonShadowStrength) || float.IsInfinity(options.ToonShadowStrength) || options.ToonShadowStrength < 0 || options.ToonShadowStrength > 1)
+                problems.Add("トゥーン影の濃さは0～1で指定してください。");
             if (!source.GetComponentsInChildren<Renderer>(true).Any(r =>
                 (r is SkinnedMeshRenderer skin && skin.sharedMesh != null && skin.sharedMesh.vertexCount > 0) ||
                 (r is MeshRenderer && r.GetComponent<MeshFilter>()?.sharedMesh != null && r.GetComponent<MeshFilter>().sharedMesh.vertexCount > 0)))
@@ -48,8 +50,9 @@ namespace BEPFairyTech.ResoConverter
                         problems.Add("瞬き用BlendShapeを選び直してください。");
                 }
                 problems.AddRange(ExpressionExporter.Validate(source, options));
-                if ((options.EnableHandExpressions || options.EnableMenuExpressions) && !BackendRunner.SupportsFacialExpressions())
-                    problems.Add("表情機能に対応した変換エンジンがありません。ResoConverter v0.3.0以降のパッケージを、変換エンジンも含めてインポートしてください。");
+                if (!BackendRunner.SupportsAvatarEyeLook() ||
+                    ((options.EnableHandExpressions || options.EnableMenuExpressions) && !BackendRunner.SupportsFacialExpressions()))
+                    problems.Add("目の動き・瞬きの修正に対応した変換エンジンがありません。ResoConverter v0.3.1以降のパッケージを、変換エンジンも含めてインポートしてください。");
             }
             if (!BackendRunner.IsResoniteFolder(options.ResonitePath))
                 problems.Add("Resonite本体のフォルダーを指定してください（FrooxEngine.dllがある場所）。");
@@ -89,7 +92,8 @@ namespace BEPFairyTech.ResoConverter
                     outputKind = options.Kind.ToString(), lockSaving = options.LockSaving,
                     frozenPose = options.Kind == ExportKind.Model && options.FreezePose,
                     sizeMode = options.Kind == ExportKind.Avatar ? options.SizeMode.ToString() : "SourceSize",
-                    blinkShape = options.Kind == ExportKind.Avatar ? options.BlinkShape : ""
+                    blinkShape = options.Kind == ExportKind.Avatar ? options.BlinkShape : "",
+                    toonShadowStrength = options.ToonShadowStrength
                 };
                 var warnings = new List<string>();
                 warnings.Add("UnityとResoniteの物理・シェーダーは異なるため、揺れ方と見た目は近似です。取り込み後に確認してください。");
@@ -100,9 +104,10 @@ namespace BEPFairyTech.ResoConverter
                     report.renderers = prepared.Root.GetComponentsInChildren<Renderer>(true).Length;
                     report.triangles = CountTriangles(prepared.Root);
                     Status = "メッシュ・マテリアル・揺れ物を変換しています…";
-                    var serializer = new AvatarSerializer();
+                    var serializer = new AvatarSerializer(options.ToonShadowStrength);
                     var root = await serializer.Export(prepared.Root, prepared.Avatar, options.Kind == ExportKind.Avatar);
                     var expressions = ExpressionExporter.Build(source, options, prepared, serializer, warnings);
+                    var eyeLook = serializer.BuildEyeLookSettings(prepared.Avatar, options.Kind == ExportKind.Avatar);
                     warnings.AddRange(serializer.Warnings);
                     report.physBoneSourceSettings = serializer.PhysicsSources.Select(p => new SourceComponentSettings {
                         hierarchyPath = p.hierarchyPath, componentType = p.componentType, unitySettingsJson = p.unitySettingsJson
@@ -114,7 +119,7 @@ namespace BEPFairyTech.ResoConverter
                     File.WriteAllText(settings, JsonUtility.ToJson(new BackendSettings {
                         lockSaving = options.LockSaving, asAvatar = options.Kind == ExportKind.Avatar,
                         useStandardSize = options.Kind == ExportKind.Avatar && options.SizeMode == AvatarSizeMode.ResoniteStandard,
-                        expressions = expressions
+                        expressions = expressions, eyeLook = eyeLook
                     }, true));
                     string package = Path.Combine(work, "output.resonitepackage");
                     Status = "Resonite形式を生成しています…";

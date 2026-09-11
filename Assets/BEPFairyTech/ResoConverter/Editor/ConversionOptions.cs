@@ -15,6 +15,7 @@ namespace BEPFairyTech.ResoConverter
         public AvatarSizeMode SizeMode = AvatarSizeMode.ResoniteStandard;
         public bool FreezePose = true;
         public bool ProcessModularAvatar = true;
+        [Range(0, 1)] public float ToonShadowStrength = 0.5f;
         public SkinnedMeshRenderer BlinkRenderer;
         public string BlinkShape = "";
         public bool EnableHandExpressions;
@@ -33,6 +34,7 @@ namespace BEPFairyTech.ResoConverter
         public bool useStandardSize;
         public float standardHeight = 1.8f;
         public BackendExpressionSettings expressions;
+        public BackendEyeLookSettings eyeLook;
     }
 
     [Serializable]
@@ -47,6 +49,7 @@ namespace BEPFairyTech.ResoConverter
         public bool frozenPose;
         public string sizeMode;
         public string blinkShape;
+        public float toonShadowStrength;
         public int renderers;
         public int triangles;
         public string[] warnings;

@@ -32,6 +32,7 @@ internal static class NativeVerification
             var itemGrab = container.GetComponentsInChildren<AvatarRoot>().Any()
                 ? null : await ItemGrabVerification.Inspect(world, container, visibleRenderers);
             var expressions = await ExpressionVerification.Verify(world, container);
+            var eyeLook = await EyeLookVerification.Verify(world, container);
             var blinkTargets = new List<string>();
             foreach (var driver in container.GetComponentsInChildren<ValueDriver<float>>().Where(d => d.Slot.Name == "BEP Selected Blink"))
             {
@@ -49,6 +50,8 @@ internal static class NativeVerification
             {
                 roundtripSucceeded = true,
                 sourceRendererCount = sourceRenderers.Count,
+                sourceMaterialTypes = sourceRenderers.SelectMany(r => r.Materials)
+                    .Select(m => m?.GetType().Name).Distinct().OrderBy(n => n).ToArray(),
                 meshVertices = sourceRenderers.Sum(r => r.Mesh.Asset.Data.VertexCount),
                 heightMeters = bounds.Size.y,
                 avatarRootCount = container.GetComponentsInChildren<AvatarRoot>().Count(),
@@ -64,6 +67,7 @@ internal static class NativeVerification
                 rootBoxColliders = container.GetComponentsInChildren<BoxCollider>().Count(),
                 itemGrab = itemGrab?.Details,
                 expressions,
+                eyeLook,
             };
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await new ToBackground();

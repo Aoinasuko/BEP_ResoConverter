@@ -79,6 +79,8 @@ namespace BEPFairyTech.ResoConverter
                 options.LockSaving = EditorGUILayout.ToggleLeft("他の人による保存を制限する", options.LockSaving);
                 EditorGUILayout.LabelField("チェックを外すと、他の人も保存できる形式で出力します。", EditorStyles.wordWrappedMiniLabel);
                 options.ProcessModularAvatar = EditorGUILayout.ToggleLeft("Modular Avatarのボーン追従・結合を反映", options.ProcessModularAvatar);
+                options.ToonShadowStrength = EditorGUILayout.Slider("トゥーン影の濃さ", options.ToonShadowStrength, 0, 1);
+                EditorGUILayout.LabelField("初期値0.5で影色を弱めます。1は元の影色、0はトゥーン影色なし。ワールドの照明は反映されます。", EditorStyles.wordWrappedMiniLabel);
 
                 if (options.Kind == ExportKind.Avatar)
                 {

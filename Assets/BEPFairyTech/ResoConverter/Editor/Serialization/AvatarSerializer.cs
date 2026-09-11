@@ -40,12 +40,13 @@ namespace BEPFairyTech.ResoConverter
         internal readonly List<string> Warnings = new();
         private Transform? _root;
 
-        internal AvatarSerializer()
+        internal AvatarSerializer(float toonShadowStrength = 0.5f)
         {
             _shaderTranslators = new()
             {
-                new LiltoonShaderSupport(ImportTexture, Warnings.Add),
-                new GenericShaderTranslator(ImportTexture, Warnings.Add),
+                new VrchatMobileToonShaderSupport(ImportTexture, Warnings.Add, toonShadowStrength),
+                new LiltoonShaderSupport(ImportTexture, Warnings.Add, toonShadowStrength),
+                new GenericShaderTranslator(ImportTexture, Warnings.Add, toonShadowStrength),
             };
         }
 
@@ -174,6 +175,31 @@ namespace BEPFairyTech.ResoConverter
             if (!_exportedObjects.Contains(obj) || !_unityToObject.TryGetValue(obj, out var mapped)) return false;
             id = mapped.Id;
             return id != 0;
+        }
+
+        internal BackendEyeLookSettings? BuildEyeLookSettings(SceneAvatarInfo info, bool asAvatar)
+        {
+            if (!asAvatar || info.EyeLook == null) return null;
+            return new BackendEyeLookSettings {
+                configured = true,
+                enabled = info.EyeLook.Enabled,
+                left = ConvertEye(info.EyeLook.Left),
+                right = ConvertEye(info.EyeLook.Right)
+            };
+
+            BackendEyeRotationSettings? ConvertEye(SceneEyeRotationInfo? eye)
+            {
+                if (eye == null || eye.Bone == null) return null;
+                if (!TryGetExportedObjectId(eye.Bone, out ulong id))
+                {
+                    Warnings.Add(eye.Bone.name + ": Eye Look の参照ボーンが出力範囲外または除外対象のため、この目の自動回転を移植できません。");
+                    return null;
+                }
+                return new BackendEyeRotationSettings {
+                    boneId = id, straight = eye.Straight, up = eye.Up, down = eye.Down,
+                    left = eye.Left, right = eye.Right
+                };
+            }
         }
 
         private p.GameObject CreateTransforms(Transform t)

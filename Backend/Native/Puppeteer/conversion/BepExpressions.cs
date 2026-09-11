@@ -77,6 +77,7 @@ public partial class RootConverter
         graph.Drive(handState.Value, handSelection);
         handSelection = graph.Read(handState.Value);
 
+        var resolvedTargets = new List<(SkinnedMeshRenderer renderer, Elements.Assets.BlendShape shape)>();
         for (var targetIndex = 0; targetIndex < settings.targets.Count; targetIndex++)
         {
             var spec = settings.targets[targetIndex];
@@ -90,9 +91,13 @@ public partial class RootConverter
             var shapeIndex = shapes.FindIndex(s => s.Name == spec.blendShape);
             if (shapeIndex < 0 || shapeIndex >= renderer.BlendShapeWeights.Count)
                 throw new InvalidOperationException("Expression BlendShape is missing: " + spec.blendShape);
+            resolvedTargets.Add((renderer, shapes[shapeIndex]));
             var weight = renderer.BlendShapeWeights.GetElement(shapeIndex);
+            var automaticBlink = _root.GetComponentsInChildren<ValueDriver<float>>()
+                .Any(d => d.Slot.Name == "BEP Selected Blink" && d.DriveTarget.Target == weight);
             var channel = host.AddSlot("Channel " + targetIndex + " " + spec.blendShape);
             channel.AttachComponent<ReferenceField<IField<float>>>().Reference.Target = weight;
+            if (automaticBlink) channel.AddSlot("Automatic Blink Channel").AttachComponent<ValueField<bool>>().Value.Value = true;
             var live = channel.AddSlot("Live Base").AttachComponent<ValueField<float>>();
             live.Value.Value = spec.baseline;
             if (weight.ActiveLink is FieldDrive<float> previous)
@@ -105,15 +110,18 @@ public partial class RootConverter
             for (var i = handRules.Count - 1; i >= 0; i--)
             {
                 var value = handRules[i].values.FirstOrDefault(v => v.target == targetIndex);
-                if (value != null) handValue = graph.Choose(graph.Equal(handSelection, i), graph.Constant(value.value), handValue);
+                if (value != null) handValue = graph.Choose(graph.Equal(handSelection, i),
+                    automaticBlink && ExpressionBlink.IsNeutralBlink(spec.baseline, value.value) ? fallback : graph.Constant(value.value), handValue);
             }
             for (var i = menuEntries.Count - 1; i >= 0; i--)
             {
                 var value = menuEntries[i].values.FirstOrDefault(v => v.target == targetIndex);
-                if (value != null) menuValue = graph.Choose(graph.Equal(menuSelection, i + 1), graph.Constant(value.value), menuValue);
+                if (value != null) menuValue = graph.Choose(graph.Equal(menuSelection, i + 1),
+                    automaticBlink && ExpressionBlink.IsNeutralBlink(spec.baseline, value.value) ? fallback : graph.Constant(value.value), menuValue);
             }
             graph.Drive(weight, graph.Choose(graph.Less(menuSelection, 0), handValue, menuValue));
         }
+        ExpressionBlink.Build(_root, graph, settings, resolvedTargets, handRules, menuEntries, handSelection, menuSelection);
         if (menuEntries.Count > 0) BuildExpressionMenu(host, menu.Value, menuEntries, handRules.Count > 0);
         await new NextUpdate();
     }

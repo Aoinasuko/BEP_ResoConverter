@@ -63,6 +63,11 @@ Shader "Hidden/BEPFairyTech/ResoConverter/Bake"
         {
             return tex2D(_MainTex, i.uv) * _Tint;
         }
+        float4 MultiplyOpacity(v2f_img i) : SV_Target
+        {
+            float4 color = tex2D(_MainTex, i.uv);
+            return float4(lerp(1, color.rgb, color.a), 1);
+        }
         ENDCG
         Pass
         {
@@ -97,6 +102,13 @@ Shader "Hidden/BEPFairyTech/ResoConverter/Bake"
             CGPROGRAM
             #pragma vertex vert_img
             #pragma fragment Tint
+            ENDCG
+        }
+        Pass
+        {
+            CGPROGRAM
+            #pragma vertex vert_img
+            #pragma fragment MultiplyOpacity
             ENDCG
         }
     }

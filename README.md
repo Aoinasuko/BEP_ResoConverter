@@ -16,7 +16,7 @@ VRChat SDK、Modular Avatar、NDMF、lilToonは任意です。未導入でもツ
 
 ## インストールと使い方
 
-1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.3.0.unitypackage` をダウンロードします。
+1. [Releases](https://github.com/Aoinasuko/BEP_ResoConverter/releases)から `BEP_ResoConverter-v0.3.1.unitypackage` をダウンロードします。
 2. 対象のUnityプロジェクトで `Assets → Import Package → Custom Package…` を選び、パッケージをインポートします。
 3. `BEP Fairy Tech → ResoConverter` を開きます。配置先は `Assets/BEPFairyTech/ResoConverter` です。
 4. Hierarchy上の対象ルートを指定し、「アバター」または「3Dモデル・アイテム」を選びます。
@@ -31,7 +31,7 @@ Project内のPrefabアセットは直接の対象にできません。シーン�
 
 v0.1.2では、文字列を読み取る貼り付け経路に対応するため、クリップボードへ文字列だけを渡す方式に変更しました。**Resonite標準Dashの `Paste content from clipboard` ボタンによる実機動作は未確認です。** 反応しない場合はキーボードの `Ctrl+V`、ドラッグ＆ドロップ、またはFilesタブを使用してください。
 
-旧版の出力ファイルは引き続き使えますが、v0.3.0のコントローラー操作による手形切り替えと、ハンドサインが反応しない場合の修正を反映するには、元のUnityシーンから再変換してください。v0.1で出力したアイテムを掴めない場合も再変換が必要です。古いファイルは、コピーし直すだけでは更新されません。
+v0.3.1の目の可動範囲・表情と瞬きの競合修正・影の軽減は、元のUnityシーンから再変換すると反映されます。旧版の出力ファイルは引き続き使えますが、v0.3.0のコントローラー操作による手形切り替えと、ハンドサインが反応しない場合の修正を反映するには、元のUnityシーンから再変換してください。v0.1で出力したアイテムを掴めない場合も再変換が必要です。古いファイルは、コピーし直すだけでは更新されません。
 
 ## 主な機能
 
@@ -42,7 +42,9 @@ v0.1.2では、文字列を読み取る貼り付け経路に対応するため�
 | 揺れ物 | VRC PhysBoneの基本値、対象ボーン、半径カーブ、対応コライダーを近似変換 |
 | Modular Avatar | Bone Proxy・Merge Armatureなどの前処理結果を配置・ボーン階層・メッシュへ反映 |
 | lilToon | 色・テクスチャ・透過・法線・発光・影・輪郭・リムライトを対応する材質設定へ変換 |
-| 瞬き・口パク | 瞬き用BlendShapeの選択、VRC Viseme・Jaw Flap設定の変換 |
+| 視線 | VRCの正面・上下左右の眼ボーン姿勢を移植し、設定された範囲で目を動かす |
+| 瞬き・口パク | 瞬き用BlendShapeの選択、目閉じ表情との競合抑制、VRC Viseme・Jaw Flap設定の変換 |
+| トゥーン影の濃さ | lilToon・VRChat Mobile Toon Standardの影色を0～1で調整。初期値0.5 |
 | ハンドサイン表情 | 左右それぞれ8種の手形またはAnyを指定し、両手の条件に合う表情へ切り替え |
 | コントローラーによる手形切り替え | SteamVRのOculus/Meta Touch入力に合わせ、表情と8種の標準的な手形を切り替え |
 | メニュー表情 | 名前とAnimationClipを登録し、Resonite上のメニューで表情を固定。ハンドサインより優先 |

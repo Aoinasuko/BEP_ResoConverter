@@ -13,6 +13,7 @@ namespace BEPFairyTech.ResoConverter
         internal Transform JawBone;
         internal Quaternion JawClosedRotation = Quaternion.identity;
         internal Quaternion JawOpenRotation = Quaternion.identity;
+        internal SceneEyeLookInfo EyeLook;
         internal readonly List<string> Warnings = new();
 
         internal static SceneAvatarInfo Read(GameObject root, SkinnedMeshRenderer blinkRenderer, string blinkShape)
@@ -20,6 +21,7 @@ namespace BEPFairyTech.ResoConverter
             var info = new SceneAvatarInfo();
             var descriptor = OptionalComponent.On(root, "VRC.SDK3.Avatars.Components.VRCAvatarDescriptor");
             var animator = root.GetComponent<Animator>();
+            info.EyeLook = SceneEyeLookInfo.Read(descriptor, animator, info.Warnings);
             // VRC stores the viewpoint as a world-distance offset from the avatar root.
             // Convert it to root coordinates so root scale is not applied twice in Resonite.
             if (descriptor != null)
