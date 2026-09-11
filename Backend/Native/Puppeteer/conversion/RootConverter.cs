@@ -115,6 +115,8 @@ public partial class RootConverter : IDisposable
 
         await RunDeferred();
 
+        await SetupBepExpressions(_options.expressions);
+
         EmbedVersionInfo(exportRoot);
 
         //_root.AttachComponent<f.DestroyRoot>();

@@ -15,6 +15,7 @@ namespace BEPFairyTech.ResoConverter
         internal SceneAvatarInfo Avatar;
         internal readonly List<string> Warnings = new();
         internal readonly List<Object> OwnedAssets = new();
+        internal readonly Dictionary<SkinnedMeshRenderer, SkinnedMeshRenderer> SourceRenderers = new();
         internal Scene PreviewScene;
         public void Dispose()
         {
@@ -41,6 +42,10 @@ namespace BEPFairyTech.ResoConverter
                 // A selected child can have scaled parents; export its actual world size.
                 prepared.Root.transform.localScale = source.transform.lossyScale;
                 var clonedBlink = ResolveClone(source.transform, prepared.Root.transform, blinkRenderer);
+                // Preserve component identity before MA moves hierarchy paths. A deleted/replaced
+                // renderer remains an explicit missing target instead of matching a different mesh.
+                foreach (var renderer in source.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    prepared.SourceRenderers.Add(renderer, ResolveClone(source.transform, prepared.Root.transform, renderer));
                 var poses = prepared.Root.GetComponentsInChildren<Transform>(true)
                     .Select(t => new PoseSnapshot(t)).ToArray();
                 var shapes = prepared.Root.GetComponentsInChildren<SkinnedMeshRenderer>(true)

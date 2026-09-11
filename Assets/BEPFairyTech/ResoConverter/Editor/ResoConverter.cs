@@ -13,7 +13,7 @@ namespace BEPFairyTech.ResoConverter
 {
     public static class ResoConverter
     {
-        public const string Version = "0.1.2";
+        public const string Version = "0.2.0";
         public static bool IsBusy { get; private set; }
         public static string Status { get; private set; }
         public static ConversionReport LastReport { get; private set; }
@@ -47,6 +47,9 @@ namespace BEPFairyTech.ResoConverter
                         options.BlinkRenderer.sharedMesh == null || options.BlinkRenderer.sharedMesh.GetBlendShapeIndex(options.BlinkShape) < 0)
                         problems.Add("瞬き用BlendShapeを選び直してください。");
                 }
+                problems.AddRange(ExpressionExporter.Validate(source, options));
+                if ((options.EnableHandExpressions || options.EnableMenuExpressions) && !BackendRunner.SupportsFacialExpressions())
+                    problems.Add("表情機能に対応した変換エンジンがありません。ResoConverter v0.2.0以降のパッケージを、変換エンジンも含めてインポートしてください。");
             }
             if (!BackendRunner.IsResoniteFolder(options.ResonitePath))
                 problems.Add("Resonite本体のフォルダーを指定してください（FrooxEngine.dllがある場所）。");
@@ -99,6 +102,7 @@ namespace BEPFairyTech.ResoConverter
                     Status = "メッシュ・マテリアル・揺れ物を変換しています…";
                     var serializer = new AvatarSerializer();
                     var root = await serializer.Export(prepared.Root, prepared.Avatar, options.Kind == ExportKind.Avatar);
+                    var expressions = ExpressionExporter.Build(source, options, prepared, serializer, warnings);
                     warnings.AddRange(serializer.Warnings);
                     report.physBoneSourceSettings = serializer.PhysicsSources.Select(p => new SourceComponentSettings {
                         hierarchyPath = p.hierarchyPath, componentType = p.componentType, unitySettingsJson = p.unitySettingsJson
@@ -109,7 +113,8 @@ namespace BEPFairyTech.ResoConverter
                     string settings = Path.Combine(work, "settings.json");
                     File.WriteAllText(settings, JsonUtility.ToJson(new BackendSettings {
                         lockSaving = options.LockSaving, asAvatar = options.Kind == ExportKind.Avatar,
-                        useStandardSize = options.Kind == ExportKind.Avatar && options.SizeMode == AvatarSizeMode.ResoniteStandard
+                        useStandardSize = options.Kind == ExportKind.Avatar && options.SizeMode == AvatarSizeMode.ResoniteStandard,
+                        expressions = expressions
                     }, true));
                     string package = Path.Combine(work, "output.resonitepackage");
                     Status = "Resonite形式を生成しています…";

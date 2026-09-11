@@ -26,6 +26,7 @@ namespace BEPFairyTech.ResoConverter
         private Dictionary<UnityEngine.Object, p.AssetID> _unityToAsset = new();
         private Dictionary<UnityEngine.Object, IMessage?> _protoAssets = new();
         private Dictionary<UnityEngine.Object, p.ObjectID> _unityToObject = new();
+        private readonly HashSet<UnityEngine.Object> _exportedObjects = new();
         private Dictionary<Mesh, SkinnedMeshRenderer> _referenceRenderer = new();
 
         private p.ExportRoot _exportRoot = new();
@@ -165,11 +166,22 @@ namespace BEPFairyTech.ResoConverter
             }
         }
 
+        internal bool TryGetExportedObjectId(UnityEngine.Object obj, out ulong id)
+        {
+            id = 0;
+            if (obj == null) return false;
+            if (obj is Transform transform) obj = transform.gameObject;
+            if (!_exportedObjects.Contains(obj) || !_unityToObject.TryGetValue(obj, out var mapped)) return false;
+            id = mapped.Id;
+            return id != 0;
+        }
+
         private p.GameObject CreateTransforms(Transform t)
         {
             var protoObject = new p.GameObject();
             protoObject.Name = t.gameObject.name;
             protoObject.Id = MapObject(t.gameObject);
+            _exportedObjects.Add(t.gameObject);
             protoObject.Enabled = t.gameObject.activeSelf;
             protoObject.LocalTransform = new p.Transform()
             {
@@ -212,6 +224,7 @@ namespace BEPFairyTech.ResoConverter
                 };
 
                 protoObject.Components.Add(wrapper);
+                _exportedObjects.Add(c);
             }
 
             if (!hasVHA && _avatarHead == t)

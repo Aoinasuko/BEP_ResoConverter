@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BEPFairyTech.ResoConverter
@@ -16,6 +17,10 @@ namespace BEPFairyTech.ResoConverter
         public bool ProcessModularAvatar = true;
         public SkinnedMeshRenderer BlinkRenderer;
         public string BlinkShape = "";
+        public bool EnableHandExpressions;
+        public bool EnableMenuExpressions;
+        public List<HandExpressionSettings> HandExpressions = new();
+        public List<MenuExpressionSettings> MenuExpressions = new();
         public string ResonitePath = "";
     }
 
@@ -26,6 +31,7 @@ namespace BEPFairyTech.ResoConverter
         public bool asAvatar;
         public bool useStandardSize;
         public float standardHeight = 1.8f;
+        public BackendExpressionSettings expressions;
     }
 
     [Serializable]

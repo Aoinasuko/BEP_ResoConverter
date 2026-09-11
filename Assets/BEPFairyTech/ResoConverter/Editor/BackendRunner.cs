@@ -15,6 +15,40 @@ namespace BEPFairyTech.ResoConverter
     {
         internal const string AssetRoot = "Assets/BEPFairyTech/ResoConverter";
 
+        [Serializable]
+        private sealed class BackendFeatures { public int facialExpressions; }
+        private static string featurePayload;
+        private static DateTime featureTimestamp;
+        private static long featureLength;
+        private static bool supportsExpressions;
+
+        internal static bool SupportsFacialExpressions()
+        {
+            string payload = Path.Combine(Directory.GetParent(Application.dataPath).FullName, AssetRoot, "Editor/BackendPayload.bytes");
+            var file = new FileInfo(payload);
+            if (!file.Exists) return false;
+            if (featurePayload == payload && featureTimestamp == file.LastWriteTimeUtc && featureLength == file.Length)
+                return supportsExpressions;
+            featurePayload = payload;
+            featureTimestamp = file.LastWriteTimeUtc;
+            featureLength = file.Length;
+            supportsExpressions = false;
+            try
+            {
+                using (var archive = ZipFile.OpenRead(payload))
+                {
+                    var entry = archive.GetEntry("bep-features.json");
+                    if (entry == null) return false;
+                    using (var reader = new StreamReader(entry.Open()))
+                        supportsExpressions = JsonUtility.FromJson<BackendFeatures>(reader.ReadToEnd())?.facialExpressions >= 1;
+                }
+            }
+            catch (InvalidDataException) { }
+            catch (IOException) { }
+            catch (ArgumentException) { }
+            return supportsExpressions;
+        }
+
         internal static string FindResonite()
         {
             string saved = UnityEditor.EditorPrefs.GetString("BEPFairyTech.ResoConverter.ResonitePath", "");

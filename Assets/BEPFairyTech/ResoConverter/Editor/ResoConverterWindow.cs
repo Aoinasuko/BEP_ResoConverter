@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace BEPFairyTech.ResoConverter
 {
-    public sealed class ResoConverterWindow : EditorWindow
+    public sealed partial class ResoConverterWindow : EditorWindow
     {
         [SerializeField] private GameObject source;
         [SerializeField] private ConversionOptions options = new ConversionOptions();
@@ -88,6 +88,7 @@ namespace BEPFairyTech.ResoConverter
                         new[] { "標準サイズ（高さ1.8m）", "元アバターのサイズ" });
                     DrawBlink();
                     EditorGUILayout.LabelField("口パク：VRC Avatar DescriptorのViseme設定を自動変換します。", EditorStyles.wordWrappedMiniLabel);
+                    DrawExpressions();
                 }
                 else
                 {

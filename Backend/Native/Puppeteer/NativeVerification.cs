@@ -31,13 +31,18 @@ internal static class NativeVerification
             await new ToWorld();
             var itemGrab = container.GetComponentsInChildren<AvatarRoot>().Any()
                 ? null : await ItemGrabVerification.Inspect(world, container, visibleRenderers);
+            var expressions = await ExpressionVerification.Verify(world, container);
             var blinkTargets = new List<string>();
             foreach (var driver in container.GetComponentsInChildren<ValueDriver<float>>().Where(d => d.Slot.Name == "BEP Selected Blink"))
             {
                 if (driver.ValueSource.Target == null || driver.DriveTarget.Target == null) throw new Exception("Roundtrip blink driver has missing references");
+                var blinkTarget = driver.DriveTarget.Target;
+                var proxyChannel = container.GetComponentsInChildren<ReferenceField<IField<float>>>()
+                    .FirstOrDefault(r => r.Slot.FindChild("Live Base")?.GetComponent<ValueField<float>>()?.Value == blinkTarget);
+                if (proxyChannel != null) blinkTarget = proxyChannel.Reference.Target;
                 foreach (var renderer in sourceRenderers.OfType<SkinnedMeshRenderer>())
                     for (var i = 0; i < renderer.BlendShapeWeights.Count; i++)
-                        if (renderer.BlendShapeWeights.GetElement(i) == driver.DriveTarget.Target)
+                        if (renderer.BlendShapeWeights.GetElement(i) == blinkTarget)
                             blinkTargets.Add(renderer.Slot.Name + "/" + renderer.Mesh.Asset.Data.BlendShapes.ElementAt(i).Name);
             }
             var report = new
@@ -58,6 +63,7 @@ internal static class NativeVerification
                 grabbableCount = container.GetComponentsInChildren<Grabbable>().Count(),
                 rootBoxColliders = container.GetComponentsInChildren<BoxCollider>().Count(),
                 itemGrab = itemGrab?.Details,
+                expressions,
             };
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await new ToBackground();
